@@ -4,7 +4,8 @@
 const FOLDER_ID = '1G85rimn-jTdGmdgLAFTuba79XPjqtwJ_';   // linny/data
 const MAX_BYTES = 2 * 1024 * 1024;
 // 녹화 파일(학습 노트북의 이름 규칙)과 기록표만 받는다. SIM_(가짜 센서) 파일은 받지 않는다.
-const REC_RE = /^\d{4}_(class|hall|check)_P[1-6]_(spin|pump|dance|move|still|still10|turn1|push3)_solo_\d{2}\.csv$/;
+// rec-v2.3부터: 날짜_이름_동작_번호.csv (예: 1121_준우_앞뒤로밀기_01.csv). 예전 이름(…_P1_spin_solo_01.csv)도 받는다.
+const REC_RE = /^\d{4}_((준우|상현|예림|지우|창수|준호)_(앞뒤로밀기|빙글돌기|좌우로돌기|그냥이동|가만히)|(class|hall|check)_P[1-6]_(spin|pump|dance|move|still|still10|turn1|push3)_solo)_\d{2}\.csv$/;
 const LOG_RE = /^log_\d{4}_[a-z0-9]{4}\.csv$/;
 
 function doPost(e) {

@@ -189,11 +189,9 @@ input[type=text],input[type=url]{font:inherit;width:100%;min-height:50px;border:
 <div id="tab-rec">
   <div class="col">
     <div><h2>앉는 사람</h2><div class="pick" id="people"></div></div>
-    <div><h2>장소</h2><div class="pick" id="places"></div></div>
   </div>
   <div class="col">
     <div id="motionBox"><h2>무슨 게임 동작</h2><div id="games"></div><div id="others"></div></div>
-    <div id="checkBox" class="hidden"><h2>확인 시험 (10초, 학습에는 안 씀)</h2><div id="checks"></div></div>
   </div>
   <div id="go">
     <div id="goWhat"></div>
@@ -289,26 +287,24 @@ input[type=text],input[type=url]{font:inherit;width:100%;min-height:50px;border:
    파일 이름·열·시간 구성은 rec-v1.0과 같아서 학습 노트북(train-v1.3.x)이 그대로 읽는다.
    v2.0: 혼자(solo) 방식만, 구간 지시를 게임 동작에 맞춤, 녹화 뒤 "게임이라면" 결과.
    v2.1: 가로 한 화면, 큰 글씨. 화면에는 조원 이름과 게임 이름을 보여 줌(파일 이름은 P1~P6, spin·pump·dance 그대로).
-   v2.2: 게임과 같은 색종이 모양. 녹화 뒤 보내기/버리기를 고르고, 보내면 공유 드라이브 폴더로 올라감. */
-const APP='rec-v2.2', COUNTDOWN_S=3, MAIN_S=60, CHECK_S=10, SEG_S=20, MIN_HZ=45, GAP_MS=200, AZ=[9.5,10.1];
+   v2.2: 게임과 같은 색종이 모양. 녹화 뒤 보내기/버리기를 고르고, 보내면 공유 드라이브 폴더로 올라감.
+   v2.3: 장소와 확인 시험을 없앰. 파일 이름을 "날짜_이름_동작_번호.csv"로 바꿈(예: 1121_준우_앞뒤로밀기_01.csv).
+         학습 노트북은 train-v1.3.3부터 이 이름을 읽는다. 열과 시간 구성은 그대로. */
+const APP='rec-v2.3', COUNTDOWN_S=3, MAIN_S=60, SEG_S=20, MIN_HZ=45, GAP_MS=200, AZ=[9.5,10.1];
 // 드라이브 전송 주소(Google Apps Script 웹 앱의 /exec 주소). 비어 있으면 기록표 탭에서 넣은 주소를 쓴다.
 const UPLOAD_URL='https://script.google.com/macros/s/AKfycbwA7ci24F5Qe4bx5bDxayrNZLlXQDA1mSU03oFAFgJhZC57G752Wgm-qPMTBYDHHifg/exec';
 const PEOPLE=['P1','P2','P3','P4','P5','P6'];
-// 화면에는 이름을 보여 주고, 파일 이름에는 P1~P6을 그대로 쓴다(학습 노트북의 파일 이름 규칙)
+// 화면과 파일 이름에 조원 이름을 쓴다. 학습 노트북이 이름을 P1~P6으로 바꿔 읽는다(같은 표가 노트북에도 있다).
 const NAMES={P1:'준우',P2:'상현',P3:'예림',P4:'지우',P5:'창수',P6:'준호'};
-const PLACES=[{id:'class',label:'교실'},{id:'hall',label:'복도'},{id:'check',label:'확인 시험'}];
-// 동작: 화면에는 게임 이름(label)과 몸 동작(move)을 보여 준다. 파일 이름에는 spin·pump·dance·move·still을 그대로 쓴다.
+// 파일 이름에 쓰는 동작 이름. 학습 노트북이 spin·pump·dance·move·still로 바꿔 읽는다.
+const FNAME={pump:'앞뒤로밀기',spin:'빙글돌기',dance:'좌우로돌기',move:'그냥이동',still:'가만히'};
+// 동작: 화면에는 게임 이름(label)과 몸 동작(move)을 보여 준다.
 const MOTIONS={
   pump:{label:'자동차',move:'앞뒤로 밀기',seg:['앞뒤로 왔다 갔다, 편한 빠르기로 (한 뼘쯤)','크고 빠르게','작고 불규칙하게, 살짝 비스듬하게'],short:['편한 빠르기','크고 빠르게','작고 불규칙하게']},
   spin:{label:'호두과자',move:'빙글 돌기',seg:['왼쪽으로 계속 돌기, 편한 빠르기로','오른쪽으로 계속 돌기, 빠르게','반 바퀴쯤 돌고 1~2초 멈추기를 반복 (방향은 아무 쪽)'],short:['왼쪽으로 계속','오른쪽으로 빠르게','돌았다 멈췄다']},
   dance:{label:'물주기',move:'좌우로 돌기',seg:['좌우로 번갈아 돌리기, 편한 빠르기로 (30도씩)','빠르게','한쪽으로 길게 돌렸다가 반대로 길게, 느리게'],short:['편한 빠르기','빠르게','길고 느리게']},
   move:{label:'그냥 이동',move:'게임이 조용해야 함',seg:['직진하다가 큰 커브','멈추기와 출발을 반복, 지그재그','문턱 넘기, 벽에 살짝 닿기, 급정거'],short:['직진과 커브','멈춤·출발·지그재그','문턱·벽·급정거']},
   still:{label:'가만히',move:'게임이 조용해야 함',seg:['완전히 가만히','뒤척이기, 화면 톡톡 만지기','옆 사람이 의자를 톡톡 건드리기'],short:['완전히 가만히','뒤척이기·화면 만지기','옆에서 의자 톡톡']},
-};
-const CHECKS={
-  still10:{label:'가만히 10초',instr:'의자에 가만히 앉아 있기'},
-  turn1:{label:'한 바퀴',instr:'제자리에서 왼쪽으로 정확히 한 바퀴 돌고 멈추기'},
-  push3:{label:'앞으로 밀기',instr:'멈춘 상태에서 의자를 앞으로 훅 밀기 3번 (사이사이 멈춤)'},
 };
 const MODE='solo';
 const HEADER='t_ms,ax_g,ay_g,az_g,ax,ay,az,rot_alpha,rot_beta,rot_gamma,interval_ms';
@@ -351,8 +347,7 @@ const backup=(()=>{ // 녹화 원본을 이 폰에 남겨 둔다
 
 /* ── 상태 ── */
 const saved=lsGet('settings',{});
-const state={person:PEOPLE.includes(saved.person)?saved.person:'P1', place:PLACES.some(p=>p.id===saved.place)?saved.place:'class',
-  motion:MOTIONS[saved.motion]?saved.motion:'pump', check:CHECKS[saved.check]?saved.check:'still10', sensorOn:false, sensorMsg:'', sensorCls:''};
+const state={person:PEOPLE.includes(saved.person)?saved.person:'P1', motion:MOTIONS[saved.motion]?saved.motion:'pump', sensorOn:false, sensorMsg:'', sensorCls:''};
 let log=lsGet('log',[]), counters=lsGet('counters',{});
 let devId=lsGet('dev',''); if(!/^[a-z0-9]{4}$/.test(devId)){ devId=Math.random().toString(36).slice(2,6).padEnd(4,'0'); lsSet('dev',devId); }
 const ring=[]; let lastRow=null, nullStreak=0, rec=null, pending=null, lastEntry=null, noteMsg='', noteCls='';
@@ -360,12 +355,12 @@ const integ={a:0,b:0,g:0,axMax:-Infinity,axMin:Infinity,lastTs:null};
 
 const today=()=>{const d=new Date();return pad2(d.getMonth()+1)+pad2(d.getDate());};
 const hhmm=()=>{const d=new Date();return pad2(d.getHours())+':'+pad2(d.getMinutes());};
-const isCheck=()=>state.place==='check', curMotion=()=>isCheck()?state.check:state.motion;
-const keyOf=(date,place,person,motion)=>[date,place,person,motion,MODE].join('_');
-const comboKey=date=>keyOf(date,state.place,state.person,curMotion());
+const isCheck=()=>false, curMotion=()=>state.motion;
+const keyOf=(date,person,motion)=>[date,NAMES[person],FNAME[motion]].join('_'); // 파일 이름의 앞부분: 날짜_이름_동작
+const comboKey=date=>keyOf(date,state.person,curMotion());
 const nameOf=(key,nn)=>(SIM?'SIM_':'')+key+'_'+pad2(nn)+'.csv';
 const fmt=(v,d)=>v===null||v===undefined?'':Number(v).toFixed(d);
-const motionLabel=m=>MOTIONS[m]?MOTIONS[m].label:(CHECKS[m]?CHECKS[m].label:m);
+const motionLabel=m=>MOTIONS[m]?MOTIONS[m].label:m;
 const uploadUrl=()=>UPLOAD_URL||lsGet('uploadUrl','');
 
 /* ── 소리 ── */
@@ -433,23 +428,21 @@ function startSim(){
       let ax=n(),ay=n(),az=n(),ra=n()*5,rb=n()*5,rg=n()*5;
       if(rec&&rec.phase==='main'){
         if(m==='spin') rg+=50;
-        if(m==='turn1') rg+=(t%20<3)?120:0;
         if(m==='pump'){ax+=1.6*Math.sin(2*Math.PI*.6*t);rb+=10*Math.cos(2*Math.PI*.6*t);}
         if(m==='dance') rg+=55*Math.sin(2*Math.PI*.45*t);
-        if(m==='move'){ax+=.6*Math.sin(2*Math.PI*.2*t);rg+=18*Math.sin(2*Math.PI*.1*t);}
-        if(m==='push3') ax+=(t%3<.3)?3:0; }
+        if(m==='move'){ax+=.6*Math.sin(2*Math.PI*.2*t);rg+=18*Math.sin(2*Math.PI*.1*t);} }
       onMotion({timeStamp:next,accelerationIncludingGravity:{x:ax+.4,y:ay,z:9.7+az},acceleration:{x:ax,y:ay,z:az},rotationRate:{alpha:ra,beta:rb,gamma:rg},interval:16});
       next+=16.67+(Math.random()-.5)*6; } },10);
 }
 
 /* ── 녹화 ── */
-const segInstr=(r,i)=>r.isCheck?CHECKS[r.motion].instr:MOTIONS[r.motion].seg[i];
+const segInstr=(r,i)=>MOTIONS[r.motion].seg[i];
 function startRec(){
   if(!state.sensorOn||rec||pending) return;
   audioInit(); keepAwake(); noteMsg='';
   const date=today(), key=comboKey(date), nn=(counters[key]||0)+1;
-  rec={phase:'countdown',date,nn,key,name:nameOf(key,nn),person:state.person,place:state.place,motion:curMotion(),
-       durMs:(isCheck()?CHECK_S:MAIN_S)*1000,isCheck:isCheck(),startPerf:performance.now(),t0:null,rows:[],lastTs:null,nullSkipped:0,cues:{},ticks:{3:true},timer:null};
+  rec={phase:'countdown',date,nn,key,name:nameOf(key,nn),person:state.person,place:'na',motion:curMotion(),
+       durMs:MAIN_S*1000,isCheck:false,startPerf:performance.now(),t0:null,rows:[],lastTs:null,nullSkipped:0,cues:{},ticks:{3:true},timer:null};
   $('ovName').textContent=rec.name;
   const segs=$('ovSegs'); segs.innerHTML=''; segs.classList.toggle('hidden',rec.isCheck);
   if(!rec.isCheck) MOTIONS[rec.motion].short.forEach((s,i)=>{ const d=el('div'); d.appendChild(el('i')); d.appendChild(el('span','',`${i+1}. ${s}`)); segs.appendChild(d); });
@@ -599,33 +592,29 @@ async function sendAllUnsent(){
   $('btnSendAll').disabled=false; m.textContent=`${ok}개 보냄`+(fail?`, ${fail}개 실패`:''); refresh();
 }
 
-const doneToday=m=>log.some(e=>!e.exclude&&e.date===today()&&e.person===state.person&&e.place===state.place&&e.motion===m&&!!e.sim===SIM);
+const doneToday=m=>log.some(e=>!e.exclude&&e.date===today()&&e.person===state.person&&e.motion===m&&!!e.sim===SIM);
 function autoAdvance(){ const ks=Object.keys(MOTIONS), i=ks.indexOf(state.motion);
   for(let k=1;k<=ks.length;k++){ const m=ks[(i+k)%ks.length]; if(!doneToday(m)){state.motion=m;break;} } saveSettings(); }
-const saveSettings=()=>lsSet('settings',{person:state.person,place:state.place,motion:state.motion,check:state.check});
+const saveSettings=()=>lsSet('settings',{person:state.person,motion:state.motion});
 
 /* ── 그리기 ── */
 function chips(box,items,cur,pick){ box.innerHTML=''; for(const it of items){ const b=el('button',it.id===cur?'on':'',it.label); if(it.small) b.appendChild(el('small','',it.small));
   b.setAttribute('aria-pressed',it.id===cur); b.onclick=()=>{pick(it.id);saveSettings();refresh();}; box.appendChild(b);} }
 function refresh(){
   chips($('people'),PEOPLE.map(p=>({id:p,label:NAMES[p],small:p})),state.person,v=>state.person=v);
-  chips($('places'),PLACES.map(p=>({id:p.id,label:p.id==='check'?'확인':p.label})),state.place,v=>state.place=v);
-  $('motionBox').classList.toggle('hidden',isCheck()); $('checkBox').classList.toggle('hidden',!isCheck());
-  const games=$('games'), others=$('others'), checks=$('checks'); games.innerHTML=others.innerHTML=checks.innerHTML='';
-  const pickMotion=id=>{ if(isCheck())state.check=id; else state.motion=id; saveSettings(); refresh(); };
+  const games=$('games'), others=$('others'); games.innerHTML=others.innerHTML='';
+  const pickMotion=id=>{ state.motion=id; saveSettings(); refresh(); };
   for(const id of ['pump','spin','dance']){ const m=MOTIONS[id], done=doneToday(id), b=el('button','gcard'+(id===state.motion?' on':'')+(done?' done':''));
     const face=el('div','face'); face.innerHTML=`<svg viewBox="-80 -64 160 126" aria-hidden="true">${ICON[id]}</svg>`; face.appendChild(el('b','',m.label)); face.appendChild(el('span','',m.move));
     b.appendChild(face); const bd=el('div','badge'); bd.innerHTML=CHECKMARK; b.appendChild(bd);
     b.setAttribute('aria-pressed',id===state.motion); b.setAttribute('aria-label',`${m.label}, ${m.move}${done?', 오늘 완료':''}`); b.onclick=()=>pickMotion(id); games.appendChild(b); }
   for(const id of ['move','still']){ const m=MOTIONS[id], done=doneToday(id), b=el('button',(id===state.motion?'on ':'')+(done?'done':''));
     b.appendChild(el('b','',m.label)); b.appendChild(el('span','',done?'오늘 완료':m.move)); b.setAttribute('aria-pressed',id===state.motion); b.onclick=()=>pickMotion(id); others.appendChild(b); }
-  for(const [id,c] of Object.entries(CHECKS)){ const done=doneToday(id), b=el('button',(id===state.check?'on ':'')+(done?'done':''));
-    b.appendChild(el('b','',c.label)); b.appendChild(el('span','',done?'오늘 완료':c.instr)); b.setAttribute('aria-pressed',id===state.check); b.onclick=()=>pickMotion(id); checks.appendChild(b); }
   // 오른쪽: 지금 녹화할 것
   const m=curMotion(), date=today();
-  $('goWhat').textContent=`${NAMES[state.person]}  ${PLACES.find(p=>p.id===state.place).label}  ${motionLabel(m)}`;
+  $('goWhat').textContent=`${NAMES[state.person]}  ${motionLabel(m)}  ${MOTIONS[m].move}`;
   const steps=$('goSteps'); steps.innerHTML='';
-  (isCheck()?[CHECKS[m].instr]:MOTIONS[m].seg).forEach((s,i)=>{ const li=el('li'); li.appendChild(el('b','',i+1)); li.appendChild(el('span','',s)); steps.appendChild(li); });
+  MOTIONS[m].seg.forEach((s,i)=>{ const li=el('li'); li.appendChild(el('b','',i+1)); li.appendChild(el('span','',s)); steps.appendChild(li); });
   $('goFile').textContent=nameOf(comboKey(date),(counters[comboKey(date)]||0)+1);
   const msg=$('goMsg'); let text=noteMsg||state.sensorMsg, cls=noteMsg?noteCls:state.sensorCls;
   if(!text&&!state.sensorOn) text='폰을 받침판에 눕혀 고정한 뒤 센서를 켜세요.';
