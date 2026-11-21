@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0F4A34">
+<title>리니 동작 녹화</title>
+<style>
+:root{--paper:#F3FBF1;--sheet:#FFFDF6;--deep:#0F4A34;--green:#5AB953;--yellow:#FFD84A;--red:#B3262E;--line:#CFE0CC;--mute:#5B7468}
+*{box-sizing:border-box;margin:0}
+html{-webkit-text-size-adjust:100%}
+body{background:var(--paper);color:var(--deep);font:16px/1.45 system-ui,-apple-system,"Malgun Gothic","Apple SD Gothic Neo",sans-serif;
+  padding:12px max(12px,env(safe-area-inset-right)) 40px max(12px,env(safe-area-inset-left));max-width:760px;margin:0 auto;-webkit-tap-highlight-color:transparent}
+h1{font-size:19px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+h1 small{font-size:12px;font-weight:500;color:var(--mute)}
+h2{font-size:15px;margin-bottom:8px}
+.chip{margin-left:auto;font-size:12px;font-weight:600;padding:3px 10px;border-radius:99px;background:#E3EDE1;color:var(--mute)}
+.chip.ok{background:var(--green);color:#fff}.chip.bad{background:var(--red);color:#fff}
+.card{background:var(--sheet);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:12px}
+.hidden{display:none!important}
+button{font:inherit;color:inherit;cursor:pointer;border:2px solid var(--line);background:var(--sheet);border-radius:10px;min-height:44px;padding:8px 12px;touch-action:manipulation}
+button:disabled{opacity:.45;cursor:default}
+button:focus-visible{outline:3px solid var(--deep);outline-offset:2px}
+.primary{background:var(--deep);border-color:var(--deep);color:#fff;font-weight:700;width:100%;min-height:56px;font-size:18px}
+.danger{border-color:var(--red);color:var(--red)}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
+.row>label,.lab{width:64px;flex:none;font-size:13px;color:var(--mute)}
+.seg{display:flex;gap:6px;flex:1;flex-wrap:wrap}
+.seg button{flex:1;min-width:52px;font-weight:600}
+.seg button.on,.tabs button.on{background:var(--deep);border-color:var(--deep);color:#fff}
+.tabs{display:flex;gap:6px;margin-bottom:12px}.tabs button{flex:1;font-weight:700}
+.motions{display:grid;gap:6px}
+.motions button{display:grid;grid-template-columns:1fr auto;gap:2px 10px;text-align:left;align-items:center}
+.motions button b{font-size:16px}.motions button span{font-size:12.5px;color:var(--mute);grid-column:1}
+.motions button i{grid-row:1/3;grid-column:2;font-style:normal;font-size:12px;font-weight:700;padding:3px 9px;border-radius:99px;background:#E3EDE1;color:var(--mute)}
+.motions button.done i{background:var(--green);color:#fff}
+.motions button.on{border-color:var(--deep);box-shadow:inset 0 0 0 1px var(--deep)}
+.note{font-size:13.5px;padding:9px 11px;border-radius:9px;background:#E3EDE1;margin:8px 0}
+.note.ok{background:#DDF1D8}.note.warn{background:#FFF0B8}.note.bad{background:#F6D5D6;color:#6E1217}
+.hint{font-size:12.5px;color:var(--mute);margin-top:6px}
+.name{font:600 13.5px ui-monospace,Menlo,Consolas,monospace;word-break:break-all}
+table{width:100%;border-collapse:collapse;font-size:13px;font-variant-numeric:tabular-nums}
+th,td{padding:6px 6px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+th:first-child,td:first-child{text-align:left}
+th{font-size:12px;color:var(--mute);font-weight:600}
+.scroll{overflow-x:auto}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin:8px 0}
+.stats div{background:#EEF6EC;border-radius:9px;padding:7px 10px}.stats b{display:block;font-size:18px;font-variant-numeric:tabular-nums}.stats span{font-size:12px;color:var(--mute)}
+input[type=text]{font:inherit;width:100%;min-height:44px;border:2px solid var(--line);border-radius:10px;padding:8px 10px;background:#fff;color:inherit}
+label.ck{display:flex;gap:8px;align-items:center;min-height:44px;font-size:14px}
+label.ck input{width:22px;height:22px}
+/* 녹화 중 화면 */
+#ov{position:fixed;inset:0;z-index:10;background:var(--deep);color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;text-align:center;
+  padding:16px max(16px,env(safe-area-inset-right)) 16px max(16px,env(safe-area-inset-left))}
+#ovPhase{font-size:16px;opacity:.85}
+#ovBig{font-size:min(30vh,120px);font-weight:800;line-height:1;font-variant-numeric:tabular-nums}
+#ovInstr{font-size:min(6vw,26px);font-weight:700;max-width:22em;text-wrap:balance}
+#ovNext{font-size:14px;opacity:.75;min-height:1.4em}
+#ovBarBox{position:relative;width:min(92%,560px);height:14px;border-radius:7px;background:rgba(255,255,255,.2);overflow:hidden}
+#ovBar{height:100%;width:0;background:var(--yellow)}
+#ovBarBox::before,#ovBarBox::after{content:"";position:absolute;top:0;bottom:0;width:2px;background:var(--deep);left:33.33%}
+#ovBarBox::after{left:66.66%}
+#ovName{font:12px ui-monospace,Menlo,Consolas,monospace;opacity:.7;word-break:break-all}
+#ovCancel{background:transparent;border-color:rgba(255,255,255,.5);color:#fff;margin-top:6px}
+#ov.go{background:#12603F}
+@media (orientation:landscape) and (max-height:480px){#ovBig{font-size:26vh}#ov{gap:5px}}
+</style>
+</head>
+<body>
+<h1>리니 동작 녹화 <small id="ver"></small><span class="chip" id="chip">센서 꺼짐</span></h1>
+
+<div class="note bad hidden" id="httpsWarn">이 주소는 https가 아니어서 센서를 쓸 수 없습니다. GitHub Pages 주소(https://…)로 여세요.</div>
+<div class="note warn hidden" id="simWarn">시뮬레이션 모드입니다. 가짜 센서 값으로 녹화되며 파일 이름 앞에 SIM_이 붙습니다. 실제 녹화에 쓰지 마세요.</div>
+
+<section class="card" id="startCard">
+  <h2>1. 센서 켜기</h2>
+  <button class="primary" id="btnSensor">센서 켜기</button>
+  <p class="hint" id="sensorMsg">폰을 받침판에 눕혀 고정하고(화면이 위, 게임과 같은 방향) 누르세요. 초당 45번 이상 들어오면 정상입니다.</p>
+</section>
+
+<div class="tabs" role="tablist">
+  <button data-tab="rec" class="on">녹화</button><button data-tab="check">점검</button><button data-tab="log">기록표</button>
+</div>
+
+<!-- 녹화 -->
+<div id="tab-rec">
+  <section class="card">
+    <h2>2. 무엇을 녹화하나</h2>
+    <div class="row"><span class="lab">앉는 사람</span><div class="seg" id="people"></div></div>
+    <div class="row"><span class="lab">장소</span><div class="seg" id="places"></div></div>
+    <div class="motions" id="motions"></div>
+    <p class="hint" id="motionHint"></p>
+  </section>
+  <section class="card">
+    <h2>3. 녹화</h2>
+    <p class="name" id="nextName"></p>
+    <p class="hint" id="recHint">앉은 사람이 발로 바닥을 밀어 혼자 움직입니다. 3초 카운트다운 뒤 "삐" 소리에 시작하고, 20초마다 소리와 함께 지시가 바뀝니다.</p>
+    <button class="primary" id="btnRec" style="margin-top:10px" disabled>녹화 시작</button>
+  </section>
+  <section class="card hidden" id="resultCard">
+    <h2>방금 녹화</h2>
+    <p class="name" id="rName"></p>
+    <div class="note" id="rNote"></div>
+    <div class="stats">
+      <div><b id="rRows">-</b><span>줄 수</span></div><div><b id="rHz">-</b><span>초당 횟수</span></div>
+      <div><b id="rGap">-</b><span>가장 긴 끊김 ms</span></div><div><b id="rAz">-</b><span>시작 전 az_g</span></div>
+    </div>
+    <div class="note" id="rGame"></div>
+    <input type="text" id="memoText" placeholder="메모 (예: 중간에 문턱에 걸림)" autocomplete="off">
+    <label class="ck"><input type="checkbox" id="memoExclude"> 이 파일은 학습에서 제외 (녹화가 잘못된 경우만)</label>
+    <div class="row" style="margin:6px 0 0"><button id="btnMemo">메모 저장</button><button id="btnRedl">파일 다시 받기</button><span class="hint" id="memoMsg"></span></div>
+  </section>
+</div>
+
+<!-- 점검 -->
+<div id="tab-check" class="hidden">
+  <section class="card">
+    <h2>실시간 값</h2>
+    <div class="scroll"><table><thead><tr><th>값</th><th>지금</th><th>최근 1초 평균</th></tr></thead><tbody id="liveBody"></tbody></table></div>
+    <div class="note" id="orientNote">센서를 켜면 폰 방향을 확인합니다.</div>
+    <p class="hint">가만히 놓았을 때 az_g가 약 +9.8, ax_g와 ay_g가 0 근처면 폰 방향이 맞습니다.</p>
+  </section>
+  <section class="card">
+    <h2>회전 누적 (한 바퀴 시험)</h2>
+    <div class="stats"><div><b id="iA">0</b><span>rot_alpha 누적 각도</span></div><div><b id="iB">0</b><span>rot_beta</span></div><div><b id="iG">0</b><span>rot_gamma</span></div></div>
+    <button id="btnInteg">초기화</button>
+    <p class="hint">초기화하고 제자리에서 왼쪽으로 정확히 한 바퀴 돕니다. rot_gamma만 약 +360이 되어야 게임·학습과 맞습니다. 음수면 좌우가 반대이고, 약 6.3이면 단위가 rad/s입니다.</p>
+  </section>
+  <section class="card">
+    <h2>앞으로 밀기 시험</h2>
+    <div class="stats"><div><b id="axMax">-</b><span>초기화 후 ax_g 최댓값</span></div><div><b id="axMin">-</b><span>ax_g 최솟값</span></div></div>
+    <button id="btnAx">초기화</button>
+    <p class="hint">초기화하고 의자를 앞으로 훅 밉니다. 최댓값이 먼저 크게(+2 이상) 오르면 x축이 앞쪽입니다.</p>
+  </section>
+  <section class="card">
+    <h2>게임이라면 어떻게 볼까</h2>
+    <div class="stats">
+      <div><b id="gPump">0</b><span>앞뒤 인정 (자동차 부스트)</span></div><div><b id="gSpin">0</b><span>회전 시작 인정 (호두과자 뒤집기)</span></div>
+      <div><b id="gTurn">0.00</b><span>물줄기 (−왼쪽 ~ +오른쪽)</span></div>
+    </div>
+    <button id="btnGame">초기화</button>
+    <p class="hint" id="gameHint"></p>
+  </section>
+</div>
+
+<!-- 기록표 -->
+<div id="tab-log" class="hidden">
+  <section class="card">
+    <h2>기록표</h2>
+    <div class="row"><button id="btnLogDl">기록표 받기 (log_날짜.csv)</button><span class="hint" id="logMsg"></span></div>
+    <p class="hint">기록표 파일을 녹화 CSV와 같은 드라이브 폴더에 넣으면, 학습 노트북이 "제외"로 표시한 파일을 자동으로 뺍니다.</p>
+    <div class="scroll" style="margin-top:8px"><table><thead><tr><th>파일</th><th>시각</th><th>Hz</th><th>점검</th><th>제외</th><th></th></tr></thead><tbody id="logBody"></tbody></table></div>
+    <p class="hint" id="logEmpty">아직 녹화가 없습니다.</p>
+  </section>
+  <section class="card">
+    <h2>모든 기록 지우기</h2>
+    <p class="hint">기록표, 파일 번호, 이 폰의 백업이 모두 지워집니다. 녹화를 모두 마치고 파일을 옮긴 뒤에만 쓰세요.</p>
+    <button class="danger" id="btnClear" style="margin-top:8px">모든 기록 지우기</button>
+  </section>
+</div>
+
+<!-- 녹화 중 -->
+<div id="ov" class="hidden" aria-live="polite">
+  <div id="ovPhase"></div>
+  <div id="ovBig">3</div>
+  <div id="ovInstr"></div>
+  <div id="ovNext"></div>
+  <div id="ovBarBox"><div id="ovBar"></div></div>
+  <div id="ovName"></div>
+  <button id="ovCancel">취소 (저장 안 함)</button>
+</div>
+
+<script>
+(() => {
+'use strict';
+/* 리니 동작 녹화 rec-v2.0
+   파일 이름·열·시간 구성은 rec-v1.0과 같아서 학습 노트북(train-v1.3.x)이 그대로 읽는다.
+   달라진 점: 혼자(solo) 방식만, 20초 구간의 지시를 게임에서 실제로 하는 동작에 맞춤, 녹화 뒤 "게임이라면 몇 번 인정했을지"를 보여 줌. */
+const APP='rec-v2.0', COUNTDOWN_S=3, MAIN_S=60, CHECK_S=10, SEG_S=20, MIN_HZ=45, GAP_MS=200, AZ=[9.5,10.1];
+const PEOPLE=['P1','P2','P3','P4','P5','P6'];
+const PLACES=[{id:'class',label:'교실'},{id:'hall',label:'복도'},{id:'check',label:'확인 시험'}];
+// 동작: 게임에서 쓰는 세 동작(spin·pump·dance)과, 게임이 반응하면 안 되는 두 동작(move·still)
+const MOTIONS={
+  spin:{label:'빙글',game:'호두과자 뒤집기',seg:['왼쪽으로 계속 돌기, 편한 빠르기로','오른쪽으로 계속 돌기, 빠르게','돌았다 멈췄다 반복: 반 바퀴쯤 돌고 1~2초 멈춤 (호두과자 뒤집듯, 방향은 아무 쪽)']},
+  pump:{label:'영차영차',game:'자동차 부스트',seg:['앞뒤로 왔다 갔다, 편한 빠르기로 (한 뼘쯤)','크고 빠르게','작고 불규칙하게, 살짝 비스듬하게']},
+  dance:{label:'흔들흔들',game:'물주기',seg:['좌우로 번갈아 돌리기, 편한 빠르기로 (30도씩)','빠르게','한쪽으로 길게 돌렸다가 반대로 길게, 느리게 (물줄기를 끝에서 끝으로)']},
+  move:{label:'그냥 이동',game:'게임이 반응하면 안 됨',seg:['직진 + 큰 커브','멈추기·출발 반복, 지그재그','문턱 넘기, 벽에 살짝 닿기, 급정거']},
+  still:{label:'정지',game:'게임이 반응하면 안 됨',seg:['완전히 가만히','뒤척이기, 화면 만지기 (카드 누르듯 톡톡)','옆 사람이 의자를 톡톡 건드리기']},
+};
+const CHECKS={
+  still10:{label:'가만히',instr:'의자에 가만히 앉아 있기 (10초)'},
+  turn1:{label:'한 바퀴',instr:'제자리에서 왼쪽으로 정확히 한 바퀴 돌고 멈추기'},
+  push3:{label:'앞으로 밀기',instr:'멈춘 상태에서 의자를 앞으로 훅 밀기 3번 (사이사이 멈춤)'},
+};
+const MODE='solo';
+const HEADER='t_ms,ax_g,ay_g,az_g,ax,ay,az,rot_alpha,rot_beta,rot_gamma,interval_ms';
+// 게임(imu.js)의 빠른 판단과 같은 값
+const GAME={pumpAcc:.8,pumpGapMs:350,pumpMaxTurn:25,spinRate:35,spinRearm:15,spinRearmMs:150,turnFull:45,turnDead:10};
+const SIM=new URLSearchParams(location.search).get('sim')==='1';
+const $=id=>document.getElementById(id), pad2=n=>String(n).padStart(2,'0');
+
+/* ── 저장 (실패해도 동작) ── */
+const mem={}; let storageOk=true;
+const lsGet=(k,d)=>{try{const v=localStorage.getItem('rec2.'+k);return v===null?d:JSON.parse(v);}catch(e){storageOk=false;return k in mem?mem[k]:d;}};
+const lsSet=(k,v)=>{try{localStorage.setItem('rec2.'+k,JSON.stringify(v));}catch(e){storageOk=false;mem[k]=v;}};
+const backup=(()=>{ // 녹화 원본을 이 폰에 남겨 둔다
+  let dbp=null; const ram={};
+  const open=()=>dbp||(dbp=new Promise((res,rej)=>{try{const r=indexedDB.open('linny-rec2',1);r.onupgradeneeded=()=>r.result.createObjectStore('files');r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error);}catch(e){rej(e);}}));
+  const tx=async(mode,fn)=>{const db=await open();return new Promise((res,rej)=>{const t=db.transaction('files',mode),q=fn(t.objectStore('files'));t.oncomplete=()=>res(q&&q.result);t.onerror=()=>rej(t.error);});};
+  return {put:(n,t)=>{ram[n]=t;return tx('readwrite',s=>s.put(t,n)).catch(()=>false);},
+          get:n=>tx('readonly',s=>s.get(n)).then(v=>v||ram[n]||null).catch(()=>ram[n]||null),
+          clear:()=>{for(const k in ram)delete ram[k];return tx('readwrite',s=>s.clear()).catch(()=>false);}};
+})();
+
+/* ── 상태 ── */
+const saved=lsGet('settings',{});
+const state={person:PEOPLE.includes(saved.person)?saved.person:'P1', place:PLACES.some(p=>p.id===saved.place)?saved.place:'class',
+  motion:MOTIONS[saved.motion]?saved.motion:'spin', check:CHECKS[saved.check]?saved.check:'still10', sensorOn:false};
+let log=lsGet('log',[]), counters=lsGet('counters',{});
+const ring=[]; let lastRow=null, nullStreak=0, rec=null, lastResult=null;
+const integ={a:0,b:0,g:0,axMax:-Infinity,axMin:Infinity,lastTs:null};
+
+const today=()=>{const d=new Date();return pad2(d.getMonth()+1)+pad2(d.getDate());};
+const hhmm=()=>{const d=new Date();return pad2(d.getHours())+':'+pad2(d.getMinutes());};
+const isCheck=()=>state.place==='check', curMotion=()=>isCheck()?state.check:state.motion;
+const comboKey=date=>[date,state.place,state.person,curMotion(),MODE].join('_');
+const fileName=(date,nn)=>(SIM?'SIM_':'')+comboKey(date)+'_'+pad2(nn)+'.csv';
+const fmt=(v,d)=>v===null||v===undefined?'':Number(v).toFixed(d);
+
+/* ── 소리 ── */
+let actx=null;
+function audioInit(){try{actx=actx||new (window.AudioContext||window.webkitAudioContext)();if(actx.state==='suspended')actx.resume();}catch(e){}}
+function tone(f,ms,delay=0,vol=.3){if(!actx)return;try{const o=actx.createOscillator(),g=actx.createGain(),t=actx.currentTime+delay;o.frequency.value=f;g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(.001,t+ms/1000);o.connect(g).connect(actx.destination);o.start(t);o.stop(t+ms/1000+.02);}catch(e){}}
+const sound={tick:()=>tone(660,120),start:()=>tone(990,450),seg:()=>{tone(880,150);tone(880,150,.22);},end:()=>{tone(990,150);tone(740,150,.2);tone(520,350,.4);},bad:()=>tone(300,400,0,.35)};
+
+/* ── 화면 켜 두기 ── */
+async function keepAwake(){try{if('wakeLock' in navigator&&document.visibilityState==='visible')await navigator.wakeLock.request('screen');}catch(e){}}
+document.addEventListener('visibilitychange',()=>{if(state.sensorOn)keepAwake();});
+
+/* ── 게임의 빠른 판단 (imu.js와 같은 계산) ── */
+function gameJudge(){
+  let axMean=null,fwd=0,yaw=0,lastPump=-1e9,armed=true,slow=0; const o={pumps:0,spins:0,turn:0,fwd:0,yaw:0};
+  o.push=(t,ax,gz)=>{
+    axMean=axMean===null?ax:axMean+.02*(ax-axMean); fwd+=.2*((ax-axMean)-fwd); yaw+=.35*(gz-yaw);
+    const ma=Math.abs(fwd), my=Math.abs(yaw);
+    if(ma>GAME.pumpAcc&&t-lastPump>GAME.pumpGapMs&&my<GAME.pumpMaxTurn){lastPump=t;o.pumps++;}
+    if(armed){if(my>GAME.spinRate){armed=false;slow=0;o.spins++;}}
+    else if(my<GAME.spinRearm){if(!slow)slow=t;else if(t-slow>GAME.spinRearmMs)armed=true;}else slow=0;
+    o.turn=my<GAME.turnDead?0:Math.max(-1,Math.min(1,-yaw/GAME.turnFull)); o.fwd=fwd; o.yaw=yaw;
+  };
+  return o;
+}
+let live=gameJudge();
+
+/* ── 센서 ── */
+function onMotion(e){
+  const ts=e.timeStamp, ag=e.accelerationIncludingGravity, a=e.acceleration, r=e.rotationRate;
+  const agOk=ag&&ag.x!==null&&ag.x!==undefined, rOk=r&&r.alpha!==null&&r.alpha!==undefined;
+  if(!agOk||!rOk){ nullStreak++;
+    if(rec&&rec.phase!=='done'){ rec.nullSkipped++; if(nullStreak>10) abortRec(!agOk?'중력 포함 가속도 값이 들어오지 않습니다.':'회전 속도(rotationRate) 값이 들어오지 않습니다.'); }
+    return; }
+  nullStreak=0;
+  const row=[ts,ag.x,ag.y,ag.z,a?a.x:null,a?a.y:null,a?a.z:null,r.alpha,r.beta,r.gamma,e.interval===undefined?null:e.interval];
+  lastRow=row; ring.push(row); while(ring.length&&ts-ring[0][0]>3000) ring.shift();
+  if(integ.lastTs!==null){const dt=(ts-integ.lastTs)/1000; if(dt>0&&dt<.5){integ.a+=r.alpha*dt;integ.b+=r.beta*dt;integ.g+=r.gamma*dt;}}
+  integ.lastTs=ts; if(ag.x>integ.axMax)integ.axMax=ag.x; if(ag.x<integ.axMin)integ.axMin=ag.x;
+  live.push(ts,ag.x,r.gamma);
+  if(rec&&(rec.phase==='countdown'||rec.phase==='main')){ rec.rows.push(row); rec.lastTs=ts; if(rec.phase==='main'&&ts-rec.t0>=rec.durMs) finishRec(); }
+}
+function liveHz(){ if(ring.length<2) return 0; const last=ring[ring.length-1][0]; let n=0,first=last;
+  for(let i=ring.length-1;i>=0&&last-ring[i][0]<=2000;i--){n++;first=ring[i][0];} return n>1?(n-1)/((last-first)/1000):0; }
+
+async function startSensor(){
+  audioInit(); $('btnSensor').disabled=true; $('sensorMsg').textContent='센서를 켜는 중…';
+  try{
+    if(!SIM&&typeof DeviceMotionEvent!=='undefined'&&typeof DeviceMotionEvent.requestPermission==='function'){
+      if(await DeviceMotionEvent.requestPermission()!=='granted') throw new Error('센서 권한이 거부되었습니다.'); }
+    if(SIM) startSim(); else addEventListener('devicemotion',onMotion);
+    state.sensorOn=true; keepAwake();
+    setTimeout(()=>{ const hz=liveHz();
+      if(!ring.length){ $('sensorMsg').textContent='값이 들어오지 않습니다. https 주소인지, 안드로이드 크롬인지 확인하세요.'; $('btnSensor').disabled=false; state.sensorOn=false; }
+      else{ $('sensorMsg').textContent=hz>=MIN_HZ?`정상: 초당 ${hz.toFixed(0)}번. 녹화할 수 있습니다.`:`느림: 초당 ${hz.toFixed(0)}번. 절전 모드를 끄고 다른 앱을 닫은 뒤 새로고침하세요.`;
+        $('btnSensor').textContent='센서 켜짐'; if(hz>=MIN_HZ) setTimeout(()=>$('startCard').classList.add('hidden'),1500); }
+      refresh(); },2000);
+  }catch(err){ $('sensorMsg').textContent='센서를 켜지 못했습니다: '+err.message; $('btnSensor').disabled=false; }
+}
+// 시뮬레이션(?sim=1): 약 60 Hz. 수직축 회전은 rot_gamma, 앞은 x
+function startSim(){
+  const t0=performance.now(); let next=t0;
+  setInterval(()=>{ const now=performance.now();
+    while(next<=now){ const t=(next-t0)/1000, m=(rec&&rec.motion)||curMotion(), n=()=>(Math.random()-.5)*.08;
+      let ax=n(),ay=n(),az=n(),ra=n()*5,rb=n()*5,rg=n()*5;
+      if(rec&&rec.phase==='main'){
+        if(m==='spin') rg+=50;
+        if(m==='turn1') rg+=(t%20<3)?120:0;
+        if(m==='pump'){ax+=1.6*Math.sin(2*Math.PI*.6*t);rb+=10*Math.cos(2*Math.PI*.6*t);}
+        if(m==='dance') rg+=55*Math.sin(2*Math.PI*.45*t);
+        if(m==='move'){ax+=.6*Math.sin(2*Math.PI*.2*t);rg+=18*Math.sin(2*Math.PI*.1*t);}
+        if(m==='push3') ax+=(t%3<.3)?3:0; }
+      onMotion({timeStamp:next,accelerationIncludingGravity:{x:ax+.4,y:ay,z:9.7+az},acceleration:{x:ax,y:ay,z:az},rotationRate:{alpha:ra,beta:rb,gamma:rg},interval:16});
+      next+=16.67+(Math.random()-.5)*6; } },10);
+}
+
+/* ── 녹화 ── */
+function startRec(){
+  if(!state.sensorOn||rec) return;
+  audioInit(); keepAwake();
+  const date=today(), nn=(counters[comboKey(date)]||0)+1;
+  rec={phase:'countdown',date,nn,name:fileName(date,nn),key:comboKey(date),person:state.person,place:state.place,motion:curMotion(),
+       durMs:(isCheck()?CHECK_S:MAIN_S)*1000,isCheck:isCheck(),startPerf:performance.now(),t0:null,rows:[],lastTs:null,nullSkipped:0,cues:{},ticks:{3:true},timer:null};
+  $('resultCard').classList.add('hidden'); $('ovName').textContent=rec.name;
+  $('ovBarBox').style.visibility=rec.isCheck?'hidden':'visible'; $('ov').classList.remove('hidden','go');
+  sound.tick(); rec.timer=setInterval(recTick,50); recTick();
+}
+const segInstr=(r,i)=>r.isCheck?CHECKS[r.motion].instr:MOTIONS[r.motion].seg[i];
+function recTick(){
+  if(!rec) return; const now=performance.now();
+  if(rec.phase==='countdown'){ const el=now-rec.startPerf, left=Math.ceil((COUNTDOWN_S*1000-el)/1000);
+    if(left>=1&&!rec.ticks[left]){rec.ticks[left]=true;sound.tick();}
+    $('ovPhase').textContent='가만히 기다리세요'; $('ovBig').textContent=Math.max(left,1);
+    $('ovInstr').textContent='"삐" 소리가 나면 시작: '+segInstr(rec,0); $('ovNext').textContent=''; $('ovBar').style.width='0%';
+    if(el>=COUNTDOWN_S*1000){ rec.t0=performance.now(); rec.phase='main'; sound.start(); $('ov').classList.add('go'); }
+    return; }
+  if(rec.phase==='main'){ const el=now-rec.t0;
+    if(rec.lastTs!==null&&now-rec.lastTs>1000&&!SIM){ abortRec('센서 값이 1초 넘게 끊겼습니다.'); return; } // 화면 꺼짐, 브라우저 멈춤 등
+    if(el>=rec.durMs+300){ finishRec(); return; }
+    const si=Math.min(2,Math.floor(el/(SEG_S*1000)));
+    if(!rec.isCheck) for(const s of [1,2]) if(si>=s&&!rec.cues[s]){rec.cues[s]=true;sound.seg();}
+    const segLeft=rec.isCheck?rec.durMs-el:(si+1)*SEG_S*1000-el;
+    $('ovPhase').textContent=rec.isCheck?'확인 시험':`구간 ${si+1} / 3`;
+    $('ovBig').textContent=Math.max(0,Math.ceil(segLeft/1000));
+    $('ovInstr').textContent=segInstr(rec,si);
+    $('ovNext').textContent=!rec.isCheck&&si<2&&segLeft<6000?'다음: '+segInstr(rec,si+1):'';
+    $('ovBar').style.width=Math.min(100,el/rec.durMs*100)+'%';
+  }
+}
+function stopRec(){ if(rec&&rec.timer) clearInterval(rec.timer); $('ov').classList.add('hidden'); }
+function abortRec(reason){ if(!rec) return; const r=rec; rec.phase='done'; stopRec(); rec=null; sound.bad();
+  $('resultCard').classList.remove('hidden'); $('rNote').className='note bad';
+  $('rNote').textContent='녹화 중단: '+reason+' 파일은 저장되지 않았습니다. 다시 녹화하세요.';
+  $('rName').textContent=r.name+' (저장 안 됨)'; ['rRows','rHz','rGap','rAz'].forEach(i=>$(i).textContent='-'); $('rGame').textContent='';
+  $('btnRedl').disabled=true; $('btnMemo').disabled=true; lastResult=null; refresh(); }
+function cancelRec(){ if(!rec) return; rec.phase='done'; stopRec(); rec=null; $('recHint').textContent='녹화를 취소했습니다. 파일은 저장되지 않았고 번호도 그대로입니다.'; refresh(); }
+
+function finishRec(){
+  if(!rec||rec.phase!=='main') return;
+  rec.phase='done'; stopRec(); sound.end();
+  const r=rec; rec=null; const end=r.t0+r.durMs, rows=r.rows.filter(x=>x[0]<=end);
+  if(rows.length<10){ rec=r; r.phase='main'; abortRec('저장할 센서 값이 거의 없습니다.'); return; }
+  const lines=[HEADER];
+  for(const x of rows) lines.push([fmt(x[0]-r.t0,2),fmt(x[1],4),fmt(x[2],4),fmt(x[3],4),fmt(x[4],4),fmt(x[5],4),fmt(x[6],4),fmt(x[7],3),fmt(x[8],3),fmt(x[9],3),x[10]===null?'':String(x[10])].join(','));
+  const csv=lines.join('\n')+'\n';
+  // 품질 요약
+  const span=rows[rows.length-1][0]-rows[0][0], hz=span>0?(rows.length-1)/(span/1000):0; let maxGap=0,gaps=0;
+  for(let i=1;i<rows.length;i++){const g=rows[i][0]-rows[i-1][0]; if(g>maxGap)maxGap=g; if(g>GAP_MS)gaps++;}
+  const pre=rows.filter(x=>x[0]<r.t0), azPre=pre.length?pre.reduce((s,x)=>s+x[3],0)/pre.length:null;
+  const azBad=azPre!==null&&(azPre<AZ[0]||azPre>AZ[1]), problems=[];
+  if(hz<MIN_HZ) problems.push(`초당 ${hz.toFixed(0)}번으로 느립니다(45 미만).`);
+  if(gaps>=3) problems.push(`200 ms 넘게 끊긴 곳이 ${gaps}번 있습니다.`);
+  if(azBad) problems.push(`카운트다운 동안 az_g 평균이 ${azPre.toFixed(2)}입니다(9.5~10.1이어야 함). 폰 방향을 확인하세요.`);
+  if(r.nullSkipped>0) problems.push(`빈 센서 값 ${r.nullSkipped}개를 건너뛰었습니다.`);
+  const level=problems.length===0?'ok':(hz<MIN_HZ||gaps>=3||azBad?'bad':'warn');
+  // 게임이라면: 구간별 인정 횟수
+  const game=[0,1,2].map(()=>({pumps:0,spins:0,turn:0,n:0})), j=gameJudge(); let pp=0,ps=0;
+  for(const x of rows){ j.push(x[0],x[1],x[9]); const t=x[0]-r.t0;
+    if(t>=0){ const g=game[Math.min(2,Math.floor(t/(r.durMs/3)))]; g.pumps+=j.pumps-pp; g.spins+=j.spins-ps; g.turn+=Math.abs(j.turn); g.n++; }
+    pp=j.pumps; ps=j.spins; }
+  const gp=game.map(g=>g.pumps), gs=game.map(g=>g.spins), gt=game.map(g=>g.n?+(g.turn/g.n).toFixed(2):0);
+  counters[r.key]=r.nn; lsSet('counters',counters);
+  const entry={file:r.name,date:r.date,time:hhmm(),person:r.person,place:r.place,motion:r.motion,mode:MODE,nn:r.nn,recorder:'',memo:'',exclude:false,
+    rows:rows.length,hz:Number(hz.toFixed(1)),max_gap_ms:Math.round(maxGap),az_pre:azPre===null?null:Number(azPre.toFixed(3)),auto_check:level,sim:SIM,app:APP,
+    game_pump:gp.join('/'),game_spin:gs.join('/'),game_turn:gt.join('/')};
+  log.push(entry); lsSet('log',log); backup.put(r.name,csv); download(r.name,csv);
+  lastResult={entry,csv};
+  showResult(entry,level,problems,r);
+  if(!r.isCheck) autoAdvance();
+  refresh();
+}
+function gameVerdict(e,r){ // 이 동작에서 게임이 기대대로 반응했을지
+  const sum=s=>s.split('/').reduce((a,b)=>a+Number(b),0), P=sum(e.game_pump), S=sum(e.game_spin), T=e.game_turn;
+  const base=`게임이라면 (구간 1/2/3) · 앞뒤 인정 ${e.game_pump}번 · 회전 시작 인정 ${e.game_spin}번 · 물줄기 세기 ${T}`;
+  const want={pump:P>=10?'자동차가 잘 반응합니다.':'앞뒤 인정이 적습니다. 자동차가 잘 안 나갈 수 있습니다.',
+    spin:S>=3?'호두과자가 뒤집힙니다. (계속 도는 구간은 1번만 인정되는 것이 정상)':'회전 인정이 적습니다. 회전이 초당 35도보다 느렸을 수 있습니다.',
+    dance:Math.max(...T.split('/').map(Number))>=.35?'물줄기가 잘 나옵니다.':'물줄기가 약합니다. 회전이 느렸을 수 있습니다.',
+    move:`이동 중에 잘못 인정된 횟수입니다 (적을수록 좋음).`, still:P+S===0?'가만히 있을 때 잘못 인정이 없습니다.':'가만히 있는데 인정이 생겼습니다. 문턱을 올려야 할 수 있습니다.'}[r.motion]||'';
+  return {text:base+(want?' → '+want:''),cls:r.motion==='still'&&P+S>0?'note warn':'note'};
+}
+function showResult(entry,level,problems,r){
+  $('resultCard').classList.remove('hidden'); $('rNote').className='note '+level;
+  $('rNote').textContent=level==='ok'?'정상입니다. 파일이 Download 폴더에 저장되었습니다.':(level==='bad'?'다시 녹화를 권합니다. ':'확인이 필요합니다. ')+problems.join(' ');
+  $('rName').textContent=entry.file; $('rRows').textContent=entry.rows; $('rHz').textContent=entry.hz.toFixed(1); $('rGap').textContent=entry.max_gap_ms;
+  $('rAz').textContent=entry.az_pre===null?'-':entry.az_pre.toFixed(2);
+  const v=gameVerdict(entry,r); $('rGame').textContent=v.text; $('rGame').className=v.cls;
+  $('btnRedl').disabled=false; $('btnMemo').disabled=false; $('memoText').value=''; $('memoExclude').checked=false; $('memoMsg').textContent='';
+}
+function download(name,text){ try{ const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([text],{type:'text/csv'})); a.download=name;
+  document.body.appendChild(a); a.click(); setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},1500); }catch(e){} }
+const doneToday=m=>log.some(e=>!e.exclude&&e.date===today()&&e.person===state.person&&e.place===state.place&&e.motion===m&&!!e.sim===SIM);
+function autoAdvance(){ const ks=Object.keys(MOTIONS), i=ks.indexOf(state.motion);
+  for(let k=1;k<=ks.length;k++){ const m=ks[(i+k)%ks.length]; if(!doneToday(m)){state.motion=m;break;} } saveSettings(); }
+const saveSettings=()=>lsSet('settings',{person:state.person,place:state.place,motion:state.motion,check:state.check});
+
+/* ── 그리기 ── */
+function chips(el,items,cur,pick){ el.innerHTML=''; for(const it of items){ const b=document.createElement('button'); b.textContent=it.label; b.className=it.id===cur?'on':''; b.onclick=()=>{pick(it.id);saveSettings();refresh();}; el.appendChild(b);} }
+function refresh(){
+  chips($('people'),PEOPLE.map(p=>({id:p,label:p})),state.person,v=>state.person=v);
+  chips($('places'),PLACES,state.place,v=>state.place=v);
+  const box=$('motions'); box.innerHTML='';
+  const list=isCheck()?Object.entries(CHECKS).map(([id,c])=>({id,title:c.label,sub:c.instr})):Object.entries(MOTIONS).map(([id,m])=>({id,title:`${id} · ${m.label}`,sub:m.game}));
+  for(const it of list){ const b=document.createElement('button'), done=doneToday(it.id);
+    b.className=(it.id===curMotion()?'on ':'')+(done?'done':''); b.innerHTML=`<b></b><span></span><i>${done?'오늘 완료':'아직'}</i>`;
+    b.children[0].textContent=it.title; b.children[1].textContent=it.sub;
+    b.onclick=()=>{ if(isCheck())state.check=it.id; else state.motion=it.id; saveSettings(); refresh(); }; box.appendChild(b); }
+  $('motionHint').textContent=isCheck()?'확인 시험은 10초이고 학습에는 쓰지 않습니다. 폰 방향과 단위를 확인하는 용도입니다.'
+    :'60초 = 20초 × 3구간: '+MOTIONS[state.motion].seg.map((s,i)=>`${i+1}) ${s}`).join('  ');
+  const date=today(); $('nextName').textContent='다음 파일: '+fileName(date,(counters[comboKey(date)]||0)+1);
+  $('btnRec').disabled=!state.sensorOn||!!rec;
+  if(!storageOk) $('recHint').textContent='이 브라우저에서 저장 공간을 쓸 수 없어 파일 번호와 기록표가 새로고침하면 사라집니다.';
+  drawLog();
+}
+function drawLog(){ const tb=$('logBody'); tb.innerHTML=''; $('logEmpty').classList.toggle('hidden',log.length>0);
+  log.slice().reverse().forEach(e=>{ const tr=document.createElement('tr'), td=t=>{const c=document.createElement('td');c.textContent=t;tr.appendChild(c);return c;};
+    td(e.file).className='name'; td(e.time); td(e.hz); td({ok:'정상',warn:'확인',bad:'다시'}[e.auto_check]||'');
+    const ex=td(''), cb=document.createElement('input'); cb.type='checkbox'; cb.checked=!!e.exclude; cb.style.cssText='width:22px;height:22px'; cb.setAttribute('aria-label',e.file+' 제외');
+    cb.onchange=()=>{e.exclude=cb.checked;lsSet('log',log);refresh();}; ex.appendChild(cb);
+    const dl=td(''), b=document.createElement('button'); b.textContent='받기'; b.onclick=async()=>{const t=await backup.get(e.file); if(t)download(e.file,t); else $('logMsg').textContent='백업이 없습니다: '+e.file;}; dl.appendChild(b);
+    tb.appendChild(tr); }); }
+function logCsv(){ const cols=['file','date','time','person','place','motion','mode','nn','recorder','memo','exclude','rows','hz','max_gap_ms','az_pre','auto_check','sim','app','game_pump','game_spin','game_turn'];
+  const q=v=>{v=v===null||v===undefined?'':String(v===true?'yes':v===false?'no':v);return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;};
+  return cols.join(',')+'\n'+log.map(e=>cols.map(c=>q(e[c])).join(',')).join('\n')+'\n'; }
+
+setInterval(()=>{ // 위쪽 표시와 점검 탭
+  const hz=state.sensorOn?liveHz():0, chip=$('chip');
+  chip.textContent=state.sensorOn?`센서 ${hz.toFixed(0)} Hz`:'센서 꺼짐'; chip.className='chip'+(state.sensorOn?(hz>=MIN_HZ?' ok':' bad'):'');
+  if($('tab-check').classList.contains('hidden')||!lastRow) return;
+  const names=['ax_g','ay_g','az_g','rot_alpha','rot_beta','rot_gamma'], idx=[1,2,3,7,8,9], last=ring[ring.length-1][0], rs=ring.filter(x=>last-x[0]<=1000);
+  const avg=i=>rs.reduce((s,x)=>s+x[i],0)/rs.length;
+  $('liveBody').innerHTML=names.map((n,k)=>`<tr><td>${n}</td><td>${lastRow[idx[k]].toFixed(2)}</td><td>${avg(idx[k]).toFixed(2)}</td></tr>`).join('');
+  const az=avg(3), ok=az>=AZ[0]&&az<=AZ[1]&&Math.abs(avg(1))<2.5&&Math.abs(avg(2))<2.5, on=$('orientNote');
+  on.textContent=ok?`폰 방향 정상 (az_g ${az.toFixed(2)})`:`폰 방향 확인 필요: az_g ${az.toFixed(2)}, ax_g ${avg(1).toFixed(2)}, ay_g ${avg(2).toFixed(2)}. 눕혀서 화면이 위를 보게 하세요.`; on.className='note '+(ok?'ok':'warn');
+  $('iA').textContent=integ.a.toFixed(0); $('iB').textContent=integ.b.toFixed(0); $('iG').textContent=integ.g.toFixed(0);
+  $('axMax').textContent=isFinite(integ.axMax)?integ.axMax.toFixed(2):'-'; $('axMin').textContent=isFinite(integ.axMin)?integ.axMin.toFixed(2):'-';
+  $('gPump').textContent=live.pumps; $('gSpin').textContent=live.spins; $('gTurn').textContent=(-live.turn).toFixed(2);
+},200);
+
+/* ── 버튼 ── */
+$('ver').textContent=APP; $('btnSensor').onclick=startSensor; $('btnRec').onclick=startRec; $('ovCancel').onclick=cancelRec;
+$('gameHint').textContent=`게임과 같은 문턱입니다: 앞뒤 ${GAME.pumpAcc} m/s² (초당 ${GAME.pumpMaxTurn}도 넘게 도는 중에는 제외), 회전 시작 초당 ${GAME.spinRate}도, 물줄기는 초당 ${GAME.turnFull}도에서 가장 셉니다.`;
+$('btnInteg').onclick=()=>{integ.a=integ.b=integ.g=0;}; $('btnAx').onclick=()=>{integ.axMax=-Infinity;integ.axMin=Infinity;}; $('btnGame').onclick=()=>{live=gameJudge();};
+$('btnMemo').onclick=()=>{ if(!lastResult) return; lastResult.entry.memo=$('memoText').value.trim(); lastResult.entry.exclude=$('memoExclude').checked; lsSet('log',log); $('memoMsg').textContent='저장했습니다.'; refresh(); };
+$('btnRedl').onclick=()=>{ if(lastResult) download(lastResult.entry.file,lastResult.csv); };
+$('btnLogDl').onclick=()=>{ if(!log.length){$('logMsg').textContent='기록이 없습니다.';return;} download((SIM?'SIM_':'')+'log_'+today()+'.csv',logCsv()); $('logMsg').textContent='받았습니다.'; };
+let clearArmed=0;
+$('btnClear').onclick=()=>{ const b=$('btnClear'); if(Date.now()-clearArmed>4000){clearArmed=Date.now();b.textContent='정말 지우려면 한 번 더 누르세요';setTimeout(()=>{b.textContent='모든 기록 지우기';},4000);return;}
+  log=[];counters={};lsSet('log',log);lsSet('counters',counters);backup.clear();lastResult=null;$('resultCard').classList.add('hidden');b.textContent='모든 기록 지우기';clearArmed=0;refresh(); };
+document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{ document.querySelectorAll('.tabs button').forEach(x=>x.classList.toggle('on',x===b));
+  for(const t of ['rec','check','log']) $('tab-'+t).classList.toggle('hidden',t!==b.dataset.tab); });
+if(!isSecureContext&&!SIM) $('httpsWarn').classList.remove('hidden');
+if(SIM) $('simWarn').classList.remove('hidden');
+refresh();
+})();
+</script>
+</body>
+</html>
