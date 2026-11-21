@@ -6,189 +6,270 @@
 <meta name="theme-color" content="#0F4A34">
 <title>리니 동작 녹화</title>
 <style>
-:root{--paper:#F3FBF1;--sheet:#FFFDF6;--deep:#0F4A34;--green:#5AB953;--yellow:#FFD84A;--red:#B3262E;--line:#CFE0CC;--mute:#5B7468}
+/* 쓰는 상황: 폰을 받침판에 가로로 눕혀 놓고, 서 있는 사람이 1 m쯤 위에서 내려다보며 누른다.
+   그래서 가로 한 화면에 고르기 → 시작이 다 보이고, 글씨는 크고 진하게, 누르는 곳은 손가락 한 마디보다 크게. */
+:root{--ink:#0B3B2A;--paper:#F4F7EF;--white:#FFFFFF;--line:#B9CDB6;--soft:#E2ECDD;--mute:#4D6A5C;
+  --go:#FFD23F;--ok:#2F9E44;--okbg:#D9F2D8;--warn:#8A5A00;--warnbg:#FFE9A8;--bad:#B3262E;--badbg:#F9D7D8}
 *{box-sizing:border-box;margin:0}
-html{-webkit-text-size-adjust:100%}
-body{background:var(--paper);color:var(--deep);font:16px/1.45 system-ui,-apple-system,"Malgun Gothic","Apple SD Gothic Neo",sans-serif;
-  padding:12px max(12px,env(safe-area-inset-right)) 40px max(12px,env(safe-area-inset-left));max-width:760px;margin:0 auto;-webkit-tap-highlight-color:transparent}
-h1{font-size:19px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px}
-h1 small{font-size:12px;font-weight:500;color:var(--mute)}
-h2{font-size:15px;margin-bottom:8px}
-.chip{margin-left:auto;font-size:12px;font-weight:600;padding:3px 10px;border-radius:99px;background:#E3EDE1;color:var(--mute)}
-.chip.ok{background:var(--green);color:#fff}.chip.bad{background:var(--red);color:#fff}
-.card{background:var(--sheet);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:12px}
+html{-webkit-text-size-adjust:100%;height:100%}
+body{min-height:100%;background:var(--paper);color:var(--ink);font:500 17px/1.4 system-ui,-apple-system,"Malgun Gothic","Apple SD Gothic Neo",sans-serif;
+  -webkit-tap-highlight-color:transparent;display:flex;flex-direction:column;word-break:keep-all;overflow-wrap:anywhere}
+button{font:inherit;color:inherit;cursor:pointer;touch-action:manipulation;border:2px solid var(--line);background:var(--white);border-radius:12px;min-height:48px;padding:6px 12px}
+button:disabled{opacity:.4;cursor:default}
+button:focus-visible,input:focus-visible{outline:4px solid var(--go);outline-offset:2px}
 .hidden{display:none!important}
-button{font:inherit;color:inherit;cursor:pointer;border:2px solid var(--line);background:var(--sheet);border-radius:10px;min-height:44px;padding:8px 12px;touch-action:manipulation}
-button:disabled{opacity:.45;cursor:default}
-button:focus-visible{outline:3px solid var(--deep);outline-offset:2px}
-.primary{background:var(--deep);border-color:var(--deep);color:#fff;font-weight:700;width:100%;min-height:56px;font-size:18px}
-.danger{border-color:var(--red);color:var(--red)}
-.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
-.row>label,.lab{width:64px;flex:none;font-size:13px;color:var(--mute)}
-.seg{display:flex;gap:6px;flex:1;flex-wrap:wrap}
-.seg button{flex:1;min-width:52px;font-weight:600}
-.seg button.on,.tabs button.on{background:var(--deep);border-color:var(--deep);color:#fff}
-.tabs{display:flex;gap:6px;margin-bottom:12px}.tabs button{flex:1;font-weight:700}
-.motions{display:grid;gap:6px}
-.motions button{display:grid;grid-template-columns:1fr auto;gap:2px 10px;text-align:left;align-items:center}
-.motions button b{font-size:16px}.motions button span{font-size:12.5px;color:var(--mute);grid-column:1}
-.motions button i{grid-row:1/3;grid-column:2;font-style:normal;font-size:12px;font-weight:700;padding:3px 9px;border-radius:99px;background:#E3EDE1;color:var(--mute)}
-.motions button.done i{background:var(--green);color:#fff}
-.motions button.on{border-color:var(--deep);box-shadow:inset 0 0 0 1px var(--deep)}
-.note{font-size:13.5px;padding:9px 11px;border-radius:9px;background:#E3EDE1;margin:8px 0}
-.note.ok{background:#DDF1D8}.note.warn{background:#FFF0B8}.note.bad{background:#F6D5D6;color:#6E1217}
-.hint{font-size:12.5px;color:var(--mute);margin-top:6px}
-.name{font:600 13.5px ui-monospace,Menlo,Consolas,monospace;word-break:break-all}
-table{width:100%;border-collapse:collapse;font-size:13px;font-variant-numeric:tabular-nums}
-th,td{padding:6px 6px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
-th:first-child,td:first-child{text-align:left}
-th{font-size:12px;color:var(--mute);font-weight:600}
-.scroll{overflow-x:auto}
-.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin:8px 0}
-.stats div{background:#EEF6EC;border-radius:9px;padding:7px 10px}.stats b{display:block;font-size:18px;font-variant-numeric:tabular-nums}.stats span{font-size:12px;color:var(--mute)}
-input[type=text]{font:inherit;width:100%;min-height:44px;border:2px solid var(--line);border-radius:10px;padding:8px 10px;background:#fff;color:inherit}
-label.ck{display:flex;gap:8px;align-items:center;min-height:44px;font-size:14px}
-label.ck input{width:22px;height:22px}
-/* 녹화 중 화면 */
-#ov{position:fixed;inset:0;z-index:10;background:var(--deep);color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;text-align:center;
-  padding:16px max(16px,env(safe-area-inset-right)) 16px max(16px,env(safe-area-inset-left))}
-#ovPhase{font-size:16px;opacity:.85}
-#ovBig{font-size:min(30vh,120px);font-weight:800;line-height:1;font-variant-numeric:tabular-nums}
-#ovInstr{font-size:min(6vw,26px);font-weight:700;max-width:22em;text-wrap:balance}
-#ovNext{font-size:14px;opacity:.75;min-height:1.4em}
-#ovBarBox{position:relative;width:min(92%,560px);height:14px;border-radius:7px;background:rgba(255,255,255,.2);overflow:hidden}
-#ovBar{height:100%;width:0;background:var(--yellow)}
-#ovBarBox::before,#ovBarBox::after{content:"";position:absolute;top:0;bottom:0;width:2px;background:var(--deep);left:33.33%}
-#ovBarBox::after{left:66.66%}
-#ovName{font:12px ui-monospace,Menlo,Consolas,monospace;opacity:.7;word-break:break-all}
-#ovCancel{background:transparent;border-color:rgba(255,255,255,.5);color:#fff;margin-top:6px}
-#ov.go{background:#12603F}
-@media (orientation:landscape) and (max-height:480px){#ovBig{font-size:26vh}#ov{gap:5px}}
+
+/* 위쪽 줄 */
+header{display:flex;align-items:center;gap:8px;background:var(--ink);color:#fff;
+  padding:6px max(10px,env(safe-area-inset-right)) 6px max(10px,env(safe-area-inset-left))}
+header h1{font-size:17px;font-weight:800;white-space:nowrap}
+header h1 span{font-weight:500;opacity:.7;font-size:13px}
+nav{display:flex;gap:4px;margin-left:8px}
+nav button{min-height:40px;border:0;background:transparent;color:#fff;font-weight:700;border-radius:9px;padding:4px 14px;opacity:.75}
+nav button{white-space:nowrap}
+nav button.on{background:#fff;color:var(--ink);opacity:1}
+@media (max-width:520px){header h1 span{display:none} nav{margin-left:0} nav button{padding:4px 9px} #chip{font-size:13px;padding:5px 9px}}
+#chip{margin-left:auto;font-weight:800;font-size:15px;padding:6px 12px;border-radius:99px;background:rgba(255,255,255,.18);white-space:nowrap}
+#chip.ok{background:var(--ok)}#chip.bad{background:var(--bad)}
+.banner{padding:8px 12px;font-weight:700;font-size:15px;background:var(--warnbg);color:#5A3A00}
+.banner.bad{background:var(--bad);color:#fff}
+
+main{flex:1;padding:10px max(10px,env(safe-area-inset-right)) 14px max(10px,env(safe-area-inset-left))}
+h2{font-size:14px;font-weight:700;color:var(--mute);margin:0 0 5px}
+
+/* 녹화 탭: 가로에서는 세 칸이 한 화면에 */
+#tab-rec{display:grid;gap:10px;grid-template-columns:1fr}
+.pick{display:grid;gap:6px}
+.pick button{font-weight:800;font-size:19px;min-height:52px;padding:4px}
+.pick button.on{background:var(--ink);border-color:var(--ink);color:#fff}
+.pick button small{display:block;font-size:12px;font-weight:600;opacity:.6;line-height:1}
+#people{grid-template-columns:repeat(6,1fr)}
+#places{grid-template-columns:repeat(3,1fr);margin-top:0}
+#places button{font-size:17px}
+#motions{display:grid;gap:6px}
+#motions button{display:flex;align-items:center;gap:10px;text-align:left;min-height:54px;padding:4px 10px 4px 12px}
+#motions b{font-size:20px;font-weight:800;white-space:nowrap}
+#motions span{font-size:14px;color:var(--mute);flex:1;line-height:1.2}
+#motions i{font-style:normal;font-weight:800;font-size:14px;padding:4px 10px;border-radius:99px;background:var(--soft);color:var(--mute);white-space:nowrap}
+#motions button.done i{background:var(--ok);color:#fff}
+#motions button.on{background:var(--ink);border-color:var(--ink);color:#fff}
+#motions button.on span{color:#CFE3D6}
+#go{background:var(--white);border:2px solid var(--line);border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:8px}
+#goWhat{font-size:24px;font-weight:800;line-height:1.15}
+#goSteps{list-style:none;padding:0;display:grid;gap:4px;font-size:15.5px;line-height:1.3}
+#goSteps li{display:grid;grid-template-columns:22px 1fr;gap:6px}
+#goSteps li b{display:grid;place-items:center;width:22px;height:22px;border-radius:50%;background:var(--ink);color:#fff;font-size:13px}
+#goFile{font-size:13px;color:var(--mute);word-break:break-all}
+#goMsg{font-size:15px;font-weight:600;color:var(--mute)}
+#goMsg.warn{color:var(--warn)}#goMsg.bad{color:var(--bad)}
+#btnGo{margin-top:auto;min-height:76px;font-size:26px;font-weight:800;background:var(--go);border-color:var(--ink);border-width:3px;border-radius:16px;color:var(--ink)}
+#btnGo:active{transform:translateY(2px)}
+#lastStrip{display:flex;align-items:center;gap:8px;min-height:48px;text-align:left;font-size:15px;font-weight:700}
+#lastStrip em{font-style:normal;padding:3px 10px;border-radius:99px;color:#fff;background:var(--ok);white-space:nowrap}
+#lastStrip em.warn{background:var(--warn)}#lastStrip em.bad{background:var(--bad)}
+#lastStrip span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500}
+
+@media (min-width:700px){
+  #tab-rec{grid-template-columns:minmax(170px,.62fr) minmax(250px,1fr) minmax(260px,1.05fr);align-items:stretch}
+  #people{grid-template-columns:repeat(2,1fr)}
+  .col{display:flex;flex-direction:column;gap:8px}
+}
+@media (min-width:700px) and (max-height:430px){ /* 눕힌 폰 */
+  body{font-size:16px} main{padding-top:6px;padding-bottom:6px} header{padding-top:4px;padding-bottom:4px} .banner{padding:5px 12px;font-size:14px}
+  .pick button{min-height:44px;font-size:18px} #motions button{min-height:48px} #motions b{font-size:18px}
+  #goWhat{font-size:21px} #goSteps{font-size:14px} #btnGo{min-height:62px;font-size:23px} #go{padding:10px;gap:6px}
+}
+
+/* 점검 · 기록표 */
+.tiles{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(250px,1fr))}
+.tile{background:var(--white);border:2px solid var(--line);border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:6px}
+.tile h3{font-size:17px;font-weight:800}
+.tile p{font-size:14.5px;color:var(--mute);line-height:1.35}
+.big{font-size:38px;font-weight:800;line-height:1;font-variant-numeric:tabular-nums}
+.big small{font-size:15px;font-weight:600;color:var(--mute);margin-left:4px}
+.verdict{font-weight:800;font-size:16px;padding:6px 10px;border-radius:9px;background:var(--soft)}
+.verdict.ok{background:var(--okbg);color:#14532D}.verdict.warn{background:var(--warnbg);color:#5A3A00}
+.trio{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;font-variant-numeric:tabular-nums}
+.trio div{background:var(--soft);border-radius:9px;padding:6px 8px;font-weight:800;font-size:22px}
+.trio span{display:block;font-size:13px;font-weight:600;color:var(--mute)}
+.tile button{align-self:flex-start;font-weight:700}
+.loglist{display:grid;gap:6px;margin-top:8px}
+.logrow{display:grid;grid-template-columns:1fr auto auto auto;gap:8px;align-items:center;background:var(--white);border:2px solid var(--line);border-radius:12px;padding:6px 10px}
+.logrow.ex{opacity:.55}
+.logrow b{font-size:16px;font-weight:800;word-break:break-all;line-height:1.2}
+.logrow small{display:block;font-size:13.5px;color:var(--mute);font-weight:500}
+.pill{font-weight:800;font-size:14px;padding:4px 10px;border-radius:99px;color:#fff;background:var(--ok);white-space:nowrap}
+.pill.warn{background:var(--warn)}.pill.bad{background:var(--bad)}
+label.ck{display:flex;gap:8px;align-items:center;min-height:48px;font-weight:700;font-size:15px}
+label.ck input{width:26px;height:26px;accent-color:var(--ink)}
+.bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.strong{font-weight:800;background:var(--ink);border-color:var(--ink);color:#fff}
+.danger{border-color:var(--bad);color:var(--bad);font-weight:700}
+input[type=text]{font:inherit;width:100%;min-height:50px;border:2px solid var(--line);border-radius:12px;padding:8px 12px;background:#fff;color:inherit}
+
+/* 녹화 중: 앉은 사람도 읽을 수 있게 화면 가득 */
+.full{position:fixed;inset:0;z-index:10;display:flex;flex-direction:column;
+  padding:max(10px,env(safe-area-inset-top)) max(14px,env(safe-area-inset-right)) max(10px,env(safe-area-inset-bottom)) max(14px,env(safe-area-inset-left))}
+#ov{background:var(--ink);color:#fff;gap:8px}
+#ov.go{background:#0F6B45}
+#ovTop{display:flex;align-items:center;gap:10px}
+#ovPhase{font-size:20px;font-weight:800}
+#ovName{font-size:12.5px;opacity:.65;margin-left:auto;word-break:break-all;text-align:right}
+#ovCancel{background:transparent;border-color:rgba(255,255,255,.55);color:#fff;font-weight:700;white-space:nowrap}
+#ovMid{flex:1;display:flex;align-items:center;gap:4vw;min-height:0}
+#ovBig{font-size:min(44vh,30vw);font-weight:800;line-height:.9;font-variant-numeric:tabular-nums;width:1.25em;flex:none;text-align:center;color:var(--go)}
+#ovInstr{font-size:clamp(24px,5.4vw,52px);font-weight:800;line-height:1.18;text-wrap:balance}
+#ovNext{font-size:clamp(15px,2.4vw,22px);font-weight:600;opacity:.8;margin-top:10px;min-height:1.3em}
+#ovSegs{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+#ovSegs div{position:relative;overflow:hidden;border-radius:10px;background:rgba(255,255,255,.16);padding:7px 10px;font-size:14.5px;font-weight:700;line-height:1.2;min-height:46px;display:flex;align-items:center}
+#ovSegs div i{position:absolute;inset:0 auto 0 0;width:0;background:rgba(255,210,63,.55)}
+#ovSegs div span{position:relative;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+#ovSegs div.now{outline:3px solid var(--go)}
+#ovSegs div.past{opacity:.55}
+@media (orientation:portrait){#ovMid{flex-direction:column;justify-content:center;text-align:center}#ovBig{font-size:28vh}}
+
+/* 녹화 결과: 한눈에 괜찮은지 */
+#res{background:var(--okbg);gap:8px;overflow:auto}
+#res.warn{background:var(--warnbg)}#res.bad{background:var(--badbg)}
+#resHead{font-size:clamp(30px,6vw,54px);font-weight:800;line-height:1.05}
+#resWhy{font-size:17px;font-weight:700}
+#resFile{font-size:14px;color:var(--mute);word-break:break-all}
+#resStats{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+#resStats div{background:rgba(255,255,255,.75);border-radius:10px;padding:6px 10px}
+#resStats b{display:block;font-size:26px;font-weight:800;line-height:1.1;font-variant-numeric:tabular-nums}
+#resStats span{font-size:13.5px;font-weight:600;color:var(--mute)}
+#resGame{background:rgba(255,255,255,.75);border-radius:10px;padding:8px 12px;font-size:16px;font-weight:600;line-height:1.35}
+#resGame b{font-weight:800}
+#resBtns{display:grid;grid-template-columns:1fr 2fr;gap:8px;margin-top:auto}
+#resBtns button{min-height:60px;font-size:19px;font-weight:800}
+#btnNext{background:var(--go);border:3px solid var(--ink)}
+@media (min-width:700px){#resBody{display:grid;grid-template-columns:1.25fr 1fr;gap:10px;align-items:start}}
+#resBody>div{display:grid;gap:8px}
+@media (prefers-reduced-motion:no-preference){#ovBig.tick{animation:tick .25s ease-out}@keyframes tick{from{transform:scale(1.12)}}}
 </style>
 </head>
 <body>
-<h1>리니 동작 녹화 <small id="ver"></small><span class="chip" id="chip">센서 꺼짐</span></h1>
+<header>
+  <h1>리니 녹화 <span id="ver"></span></h1>
+  <nav><button data-tab="rec" class="on">녹화</button><button data-tab="check">점검</button><button data-tab="log">기록표</button></nav>
+  <span id="chip">센서 꺼짐</span>
+</header>
+<div class="banner bad hidden" id="httpsWarn">https 주소가 아니어서 센서를 쓸 수 없습니다. GitHub Pages 주소로 여세요.</div>
+<div class="banner hidden" id="simWarn">시뮬레이션: 가짜 센서 값입니다. 파일 이름 앞에 SIM_이 붙고, 실제 녹화에는 쓰지 않습니다.</div>
 
-<div class="note bad hidden" id="httpsWarn">이 주소는 https가 아니어서 센서를 쓸 수 없습니다. GitHub Pages 주소(https://…)로 여세요.</div>
-<div class="note warn hidden" id="simWarn">시뮬레이션 모드입니다. 가짜 센서 값으로 녹화되며 파일 이름 앞에 SIM_이 붙습니다. 실제 녹화에 쓰지 마세요.</div>
-
-<section class="card" id="startCard">
-  <h2>1. 센서 켜기</h2>
-  <button class="primary" id="btnSensor">센서 켜기</button>
-  <p class="hint" id="sensorMsg">폰을 받침판에 눕혀 고정하고(화면이 위, 게임과 같은 방향) 누르세요. 초당 45번 이상 들어오면 정상입니다.</p>
-</section>
-
-<div class="tabs" role="tablist">
-  <button data-tab="rec" class="on">녹화</button><button data-tab="check">점검</button><button data-tab="log">기록표</button>
-</div>
-
+<main>
 <!-- 녹화 -->
 <div id="tab-rec">
-  <section class="card">
-    <h2>2. 무엇을 녹화하나</h2>
-    <div class="row"><span class="lab">앉는 사람</span><div class="seg" id="people"></div></div>
-    <div class="row"><span class="lab">장소</span><div class="seg" id="places"></div></div>
-    <div class="motions" id="motions"></div>
-    <p class="hint" id="motionHint"></p>
-  </section>
-  <section class="card">
-    <h2>3. 녹화</h2>
-    <p class="name" id="nextName"></p>
-    <p class="hint" id="recHint">앉은 사람이 발로 바닥을 밀어 혼자 움직입니다. 3초 카운트다운 뒤 "삐" 소리에 시작하고, 20초마다 소리와 함께 지시가 바뀝니다.</p>
-    <button class="primary" id="btnRec" style="margin-top:10px" disabled>녹화 시작</button>
-  </section>
-  <section class="card hidden" id="resultCard">
-    <h2>방금 녹화</h2>
-    <p class="name" id="rName"></p>
-    <div class="note" id="rNote"></div>
-    <div class="stats">
-      <div><b id="rRows">-</b><span>줄 수</span></div><div><b id="rHz">-</b><span>초당 횟수</span></div>
-      <div><b id="rGap">-</b><span>가장 긴 끊김 ms</span></div><div><b id="rAz">-</b><span>시작 전 az_g</span></div>
-    </div>
-    <div class="note" id="rGame"></div>
-    <input type="text" id="memoText" placeholder="메모 (예: 중간에 문턱에 걸림)" autocomplete="off">
-    <label class="ck"><input type="checkbox" id="memoExclude"> 이 파일은 학습에서 제외 (녹화가 잘못된 경우만)</label>
-    <div class="row" style="margin:6px 0 0"><button id="btnMemo">메모 저장</button><button id="btnRedl">파일 다시 받기</button><span class="hint" id="memoMsg"></span></div>
-  </section>
+  <div class="col">
+    <div><h2>앉는 사람</h2><div class="pick" id="people"></div></div>
+    <div><h2>장소</h2><div class="pick" id="places"></div></div>
+  </div>
+  <div class="col">
+    <div><h2 id="motionTitle">동작</h2><div id="motions"></div></div>
+  </div>
+  <div id="go">
+    <div id="goWhat"></div>
+    <ol id="goSteps"></ol>
+    <div id="goFile"></div>
+    <div id="goMsg"></div>
+    <button id="btnGo">센서 켜기</button>
+    <button id="lastStrip" class="hidden"></button>
+  </div>
 </div>
 
 <!-- 점검 -->
 <div id="tab-check" class="hidden">
-  <section class="card">
-    <h2>실시간 값</h2>
-    <div class="scroll"><table><thead><tr><th>값</th><th>지금</th><th>최근 1초 평균</th></tr></thead><tbody id="liveBody"></tbody></table></div>
-    <div class="note" id="orientNote">센서를 켜면 폰 방향을 확인합니다.</div>
-    <p class="hint">가만히 놓았을 때 az_g가 약 +9.8, ax_g와 ay_g가 0 근처면 폰 방향이 맞습니다.</p>
-  </section>
-  <section class="card">
-    <h2>회전 누적 (한 바퀴 시험)</h2>
-    <div class="stats"><div><b id="iA">0</b><span>rot_alpha 누적 각도</span></div><div><b id="iB">0</b><span>rot_beta</span></div><div><b id="iG">0</b><span>rot_gamma</span></div></div>
-    <button id="btnInteg">초기화</button>
-    <p class="hint">초기화하고 제자리에서 왼쪽으로 정확히 한 바퀴 돕니다. rot_gamma만 약 +360이 되어야 게임·학습과 맞습니다. 음수면 좌우가 반대이고, 약 6.3이면 단위가 rad/s입니다.</p>
-  </section>
-  <section class="card">
-    <h2>앞으로 밀기 시험</h2>
-    <div class="stats"><div><b id="axMax">-</b><span>초기화 후 ax_g 최댓값</span></div><div><b id="axMin">-</b><span>ax_g 최솟값</span></div></div>
-    <button id="btnAx">초기화</button>
-    <p class="hint">초기화하고 의자를 앞으로 훅 밉니다. 최댓값이 먼저 크게(+2 이상) 오르면 x축이 앞쪽입니다.</p>
-  </section>
-  <section class="card">
-    <h2>게임이라면 어떻게 볼까</h2>
-    <div class="stats">
-      <div><b id="gPump">0</b><span>앞뒤 인정 (자동차 부스트)</span></div><div><b id="gSpin">0</b><span>회전 시작 인정 (호두과자 뒤집기)</span></div>
-      <div><b id="gTurn">0.00</b><span>물줄기 (−왼쪽 ~ +오른쪽)</span></div>
-    </div>
-    <button id="btnGame">초기화</button>
-    <p class="hint" id="gameHint"></p>
-  </section>
+  <div class="tiles">
+    <section class="tile">
+      <h3>폰 방향</h3>
+      <div class="verdict" id="orient">센서를 켜면 확인합니다</div>
+      <div class="trio"><div><span>ax_g</span><b id="vAx">-</b></div><div><span>ay_g</span><b id="vAy">-</b></div><div><span>az_g</span><b id="vAz">-</b></div></div>
+      <p>눕혀서 화면이 위를 보면 az_g가 약 9.8, 나머지는 0 근처입니다.</p>
+    </section>
+    <section class="tile">
+      <h3>한 바퀴 돌기</h3>
+      <div class="verdict" id="turnV">초기화하고 왼쪽으로 한 바퀴 도세요</div>
+      <div class="trio"><div><span>alpha</span><b id="iA">0</b></div><div><span>beta</span><b id="iB">0</b></div><div><span>gamma</span><b id="iG">0</b></div></div>
+      <p>gamma만 약 +360이면 맞습니다. 음수면 좌우가 반대, 6쯤이면 단위가 다릅니다.</p>
+      <button id="btnInteg">초기화</button>
+    </section>
+    <section class="tile">
+      <h3>앞으로 밀기</h3>
+      <div class="verdict" id="pushV">초기화하고 의자를 앞으로 훅 미세요</div>
+      <div class="trio" style="grid-template-columns:1fr 1fr"><div><span>ax_g 최대</span><b id="axMax">-</b></div><div><span>ax_g 최소</span><b id="axMin">-</b></div></div>
+      <p>최대가 +2 넘게 오르면 x축이 앞쪽입니다.</p>
+      <button id="btnAx">초기화</button>
+    </section>
+    <section class="tile">
+      <h3>게임이라면</h3>
+      <div class="trio"><div><span>앞뒤 인정</span><b id="gPump">0</b></div><div><span>회전 인정</span><b id="gSpin">0</b></div><div><span>물줄기</span><b id="gTurn">0.0</b></div></div>
+      <p id="gameHint"></p>
+      <button id="btnGame">초기화</button>
+    </section>
+  </div>
 </div>
 
 <!-- 기록표 -->
 <div id="tab-log" class="hidden">
-  <section class="card">
-    <h2>기록표</h2>
-    <div class="row"><button id="btnLogDl">기록표 받기 (log_날짜.csv)</button><span class="hint" id="logMsg"></span></div>
-    <p class="hint">기록표 파일을 녹화 CSV와 같은 드라이브 폴더에 넣으면, 학습 노트북이 "제외"로 표시한 파일을 자동으로 뺍니다.</p>
-    <div class="scroll" style="margin-top:8px"><table><thead><tr><th>파일</th><th>시각</th><th>Hz</th><th>점검</th><th>제외</th><th></th></tr></thead><tbody id="logBody"></tbody></table></div>
-    <p class="hint" id="logEmpty">아직 녹화가 없습니다.</p>
-  </section>
-  <section class="card">
-    <h2>모든 기록 지우기</h2>
-    <p class="hint">기록표, 파일 번호, 이 폰의 백업이 모두 지워집니다. 녹화를 모두 마치고 파일을 옮긴 뒤에만 쓰세요.</p>
-    <button class="danger" id="btnClear" style="margin-top:8px">모든 기록 지우기</button>
-  </section>
+  <div class="bar"><button class="strong" id="btnLogDl">기록표 파일 받기</button><span id="logMsg" style="font-weight:700"></span>
+    <button class="danger" id="btnClear" style="margin-left:auto">모든 기록 지우기</button></div>
+  <p style="font-size:14.5px;color:var(--mute);margin-top:6px">기록표 파일을 녹화 파일과 같은 드라이브 폴더에 넣으면, 학습 노트북이 "제외"한 파일을 알아서 뺍니다.</p>
+  <div class="loglist" id="logList"></div>
+  <p id="logEmpty" style="font-size:18px;font-weight:700;margin-top:14px">아직 녹화가 없습니다. 녹화 탭에서 시작하세요.</p>
 </div>
+</main>
 
 <!-- 녹화 중 -->
-<div id="ov" class="hidden" aria-live="polite">
-  <div id="ovPhase"></div>
-  <div id="ovBig">3</div>
-  <div id="ovInstr"></div>
-  <div id="ovNext"></div>
-  <div id="ovBarBox"><div id="ovBar"></div></div>
-  <div id="ovName"></div>
-  <button id="ovCancel">취소 (저장 안 함)</button>
+<div id="ov" class="full hidden" aria-live="polite">
+  <div id="ovTop"><span id="ovPhase"></span><span id="ovName"></span><button id="ovCancel">취소</button></div>
+  <div id="ovMid"><div id="ovBig">3</div><div><div id="ovInstr"></div><div id="ovNext"></div></div></div>
+  <div id="ovSegs"></div>
+</div>
+
+<!-- 녹화 결과 -->
+<div id="res" class="full hidden">
+  <div id="resHead"></div>
+  <div id="resWhy"></div>
+  <div id="resBody">
+    <div>
+      <div id="resStats">
+        <div><b id="rHz">-</b><span>초당 횟수</span></div><div><b id="rGap">-</b><span>최대 끊김 ms</span></div>
+        <div><b id="rAz">-</b><span>시작 전 az_g</span></div><div><b id="rRows">-</b><span>줄 수</span></div>
+      </div>
+      <div id="resGame"></div>
+      <div id="resFile"></div>
+    </div>
+    <div>
+      <input type="text" id="memoText" placeholder="메모 (예: 중간에 문턱에 걸림)" autocomplete="off" aria-label="메모">
+      <label class="ck"><input type="checkbox" id="memoExclude"> 학습에서 제외 (녹화가 잘못됐을 때만)</label>
+    </div>
+  </div>
+  <div id="resBtns"><button id="btnRedl">파일 다시 받기</button><button id="btnNext">다음 녹화로</button></div>
 </div>
 
 <script>
 (() => {
 'use strict';
-/* 리니 동작 녹화 rec-v2.0
+/* 리니 동작 녹화 rec-v2.1
    파일 이름·열·시간 구성은 rec-v1.0과 같아서 학습 노트북(train-v1.3.x)이 그대로 읽는다.
-   달라진 점: 혼자(solo) 방식만, 20초 구간의 지시를 게임에서 실제로 하는 동작에 맞춤, 녹화 뒤 "게임이라면 몇 번 인정했을지"를 보여 줌. */
-const APP='rec-v2.0', COUNTDOWN_S=3, MAIN_S=60, CHECK_S=10, SEG_S=20, MIN_HZ=45, GAP_MS=200, AZ=[9.5,10.1];
+   v2.0: 혼자(solo) 방식만, 구간 지시를 게임 동작에 맞춤, 녹화 뒤 "게임이라면" 결과.
+   v2.1: 화면을 다시 짬(가로 한 화면, 큰 글씨, 결과를 화면 가득). 녹화 내용은 v2.0과 같다. */
+const APP='rec-v2.1', COUNTDOWN_S=3, MAIN_S=60, CHECK_S=10, SEG_S=20, MIN_HZ=45, GAP_MS=200, AZ=[9.5,10.1];
 const PEOPLE=['P1','P2','P3','P4','P5','P6'];
+// 화면에는 이름을 보여 주고, 파일 이름에는 P1~P6을 그대로 쓴다(학습 노트북의 파일 이름 규칙)
+const NAMES={P1:'준우',P2:'상현',P3:'예림',P4:'지우',P5:'창수',P6:'준호'};
 const PLACES=[{id:'class',label:'교실'},{id:'hall',label:'복도'},{id:'check',label:'확인 시험'}];
-// 동작: 게임에서 쓰는 세 동작(spin·pump·dance)과, 게임이 반응하면 안 되는 두 동작(move·still)
+// 동작: 화면에는 게임 이름(label)과 몸 동작(game)을 보여 준다. 파일 이름에는 spin·pump·dance·move·still을 그대로 쓴다.
+// 게임에서 쓰는 세 동작(spin·pump·dance)과, 게임이 반응하면 안 되는 두 동작(move·still)
 const MOTIONS={
-  spin:{label:'빙글',game:'호두과자 뒤집기',seg:['왼쪽으로 계속 돌기, 편한 빠르기로','오른쪽으로 계속 돌기, 빠르게','돌았다 멈췄다 반복: 반 바퀴쯤 돌고 1~2초 멈춤 (호두과자 뒤집듯, 방향은 아무 쪽)']},
-  pump:{label:'영차영차',game:'자동차 부스트',seg:['앞뒤로 왔다 갔다, 편한 빠르기로 (한 뼘쯤)','크고 빠르게','작고 불규칙하게, 살짝 비스듬하게']},
-  dance:{label:'흔들흔들',game:'물주기',seg:['좌우로 번갈아 돌리기, 편한 빠르기로 (30도씩)','빠르게','한쪽으로 길게 돌렸다가 반대로 길게, 느리게 (물줄기를 끝에서 끝으로)']},
-  move:{label:'그냥 이동',game:'게임이 반응하면 안 됨',seg:['직진 + 큰 커브','멈추기·출발 반복, 지그재그','문턱 넘기, 벽에 살짝 닿기, 급정거']},
-  still:{label:'정지',game:'게임이 반응하면 안 됨',seg:['완전히 가만히','뒤척이기, 화면 만지기 (카드 누르듯 톡톡)','옆 사람이 의자를 톡톡 건드리기']},
+  spin:{label:'호두과자',game:'빙글 돌기',seg:['왼쪽으로 계속 돌기, 편한 빠르기로','오른쪽으로 계속 돌기, 빠르게','반 바퀴쯤 돌고 1~2초 멈추기를 반복 (방향은 아무 쪽)'],short:['왼쪽으로 계속','오른쪽으로 빠르게','돌았다 멈췄다']},
+  pump:{label:'자동차',game:'앞뒤로 밀기',seg:['앞뒤로 왔다 갔다, 편한 빠르기로 (한 뼘쯤)','크고 빠르게','작고 불규칙하게, 살짝 비스듬하게'],short:['편한 빠르기','크고 빠르게','작고 불규칙하게']},
+  dance:{label:'물주기',game:'좌우로 돌리기',seg:['좌우로 번갈아 돌리기, 편한 빠르기로 (30도씩)','빠르게','한쪽으로 길게 돌렸다가 반대로 길게, 느리게'],short:['편한 빠르기','빠르게','길고 느리게']},
+  move:{label:'그냥 이동',game:'게임 반응 없어야 함',seg:['직진하다가 큰 커브','멈추기와 출발을 반복, 지그재그','문턱 넘기, 벽에 살짝 닿기, 급정거'],short:['직진과 커브','멈춤·출발·지그재그','문턱·벽·급정거']},
+  still:{label:'가만히',game:'게임 반응 없어야 함',seg:['완전히 가만히','뒤척이기, 화면 톡톡 만지기','옆 사람이 의자를 톡톡 건드리기'],short:['완전히 가만히','뒤척이기·화면 만지기','옆에서 의자 톡톡']},
 };
 const CHECKS={
-  still10:{label:'가만히',instr:'의자에 가만히 앉아 있기 (10초)'},
+  still10:{label:'가만히 10초',instr:'의자에 가만히 앉아 있기'},
   turn1:{label:'한 바퀴',instr:'제자리에서 왼쪽으로 정확히 한 바퀴 돌고 멈추기'},
   push3:{label:'앞으로 밀기',instr:'멈춘 상태에서 의자를 앞으로 훅 밀기 3번 (사이사이 멈춤)'},
 };
@@ -198,6 +279,7 @@ const HEADER='t_ms,ax_g,ay_g,az_g,ax,ay,az,rot_alpha,rot_beta,rot_gamma,interval
 const GAME={pumpAcc:.8,pumpGapMs:350,pumpMaxTurn:25,spinRate:35,spinRearm:15,spinRearmMs:150,turnFull:45,turnDead:10};
 const SIM=new URLSearchParams(location.search).get('sim')==='1';
 const $=id=>document.getElementById(id), pad2=n=>String(n).padStart(2,'0');
+const el=(tag,cls,text)=>{const e=document.createElement(tag); if(cls)e.className=cls; if(text!==undefined)e.textContent=text; return e;};
 
 /* ── 저장 (실패해도 동작) ── */
 const mem={}; let storageOk=true;
@@ -215,9 +297,9 @@ const backup=(()=>{ // 녹화 원본을 이 폰에 남겨 둔다
 /* ── 상태 ── */
 const saved=lsGet('settings',{});
 const state={person:PEOPLE.includes(saved.person)?saved.person:'P1', place:PLACES.some(p=>p.id===saved.place)?saved.place:'class',
-  motion:MOTIONS[saved.motion]?saved.motion:'spin', check:CHECKS[saved.check]?saved.check:'still10', sensorOn:false};
+  motion:MOTIONS[saved.motion]?saved.motion:'spin', check:CHECKS[saved.check]?saved.check:'still10', sensorOn:false, sensorMsg:'', sensorCls:''};
 let log=lsGet('log',[]), counters=lsGet('counters',{});
-const ring=[]; let lastRow=null, nullStreak=0, rec=null, lastResult=null;
+const ring=[]; let lastRow=null, nullStreak=0, rec=null, lastResult=null, abortMsg='';
 const integ={a:0,b:0,g:0,axMax:-Infinity,axMin:Infinity,lastTs:null};
 
 const today=()=>{const d=new Date();return pad2(d.getMonth()+1)+pad2(d.getDate());};
@@ -239,14 +321,14 @@ document.addEventListener('visibilitychange',()=>{if(state.sensorOn)keepAwake();
 
 /* ── 게임의 빠른 판단 (imu.js와 같은 계산) ── */
 function gameJudge(){
-  let axMean=null,fwd=0,yaw=0,lastPump=-1e9,armed=true,slow=0; const o={pumps:0,spins:0,turn:0,fwd:0,yaw:0};
+  let axMean=null,fwd=0,yaw=0,lastPump=-1e9,armed=true,slow=0; const o={pumps:0,spins:0,turn:0};
   o.push=(t,ax,gz)=>{
     axMean=axMean===null?ax:axMean+.02*(ax-axMean); fwd+=.2*((ax-axMean)-fwd); yaw+=.35*(gz-yaw);
     const ma=Math.abs(fwd), my=Math.abs(yaw);
     if(ma>GAME.pumpAcc&&t-lastPump>GAME.pumpGapMs&&my<GAME.pumpMaxTurn){lastPump=t;o.pumps++;}
     if(armed){if(my>GAME.spinRate){armed=false;slow=0;o.spins++;}}
     else if(my<GAME.spinRearm){if(!slow)slow=t;else if(t-slow>GAME.spinRearmMs)armed=true;}else slow=0;
-    o.turn=my<GAME.turnDead?0:Math.max(-1,Math.min(1,-yaw/GAME.turnFull)); o.fwd=fwd; o.yaw=yaw;
+    o.turn=my<GAME.turnDead?0:Math.max(-1,Math.min(1,-yaw/GAME.turnFull));
   };
   return o;
 }
@@ -257,7 +339,7 @@ function onMotion(e){
   const ts=e.timeStamp, ag=e.accelerationIncludingGravity, a=e.acceleration, r=e.rotationRate;
   const agOk=ag&&ag.x!==null&&ag.x!==undefined, rOk=r&&r.alpha!==null&&r.alpha!==undefined;
   if(!agOk||!rOk){ nullStreak++;
-    if(rec&&rec.phase!=='done'){ rec.nullSkipped++; if(nullStreak>10) abortRec(!agOk?'중력 포함 가속도 값이 들어오지 않습니다.':'회전 속도(rotationRate) 값이 들어오지 않습니다.'); }
+    if(rec&&rec.phase!=='done'){ rec.nullSkipped++; if(nullStreak>10) abortRec(!agOk?'가속도 값이 들어오지 않습니다.':'회전 값이 들어오지 않습니다.'); }
     return; }
   nullStreak=0;
   const row=[ts,ag.x,ag.y,ag.z,a?a.x:null,a?a.y:null,a?a.z:null,r.alpha,r.beta,r.gamma,e.interval===undefined?null:e.interval];
@@ -271,18 +353,18 @@ function liveHz(){ if(ring.length<2) return 0; const last=ring[ring.length-1][0]
   for(let i=ring.length-1;i>=0&&last-ring[i][0]<=2000;i--){n++;first=ring[i][0];} return n>1?(n-1)/((last-first)/1000):0; }
 
 async function startSensor(){
-  audioInit(); $('btnSensor').disabled=true; $('sensorMsg').textContent='센서를 켜는 중…';
+  audioInit(); $('btnGo').disabled=true; state.sensorMsg='센서를 켜는 중…'; state.sensorCls=''; refresh();
   try{
     if(!SIM&&typeof DeviceMotionEvent!=='undefined'&&typeof DeviceMotionEvent.requestPermission==='function'){
       if(await DeviceMotionEvent.requestPermission()!=='granted') throw new Error('센서 권한이 거부되었습니다.'); }
     if(SIM) startSim(); else addEventListener('devicemotion',onMotion);
-    state.sensorOn=true; keepAwake();
+    keepAwake();
     setTimeout(()=>{ const hz=liveHz();
-      if(!ring.length){ $('sensorMsg').textContent='값이 들어오지 않습니다. https 주소인지, 안드로이드 크롬인지 확인하세요.'; $('btnSensor').disabled=false; state.sensorOn=false; }
-      else{ $('sensorMsg').textContent=hz>=MIN_HZ?`정상: 초당 ${hz.toFixed(0)}번. 녹화할 수 있습니다.`:`느림: 초당 ${hz.toFixed(0)}번. 절전 모드를 끄고 다른 앱을 닫은 뒤 새로고침하세요.`;
-        $('btnSensor').textContent='센서 켜짐'; if(hz>=MIN_HZ) setTimeout(()=>$('startCard').classList.add('hidden'),1500); }
+      if(!ring.length){ state.sensorMsg='값이 들어오지 않습니다. https 주소인지, 안드로이드 크롬인지 확인하세요.'; state.sensorCls='bad'; }
+      else{ state.sensorOn=true; state.sensorCls=hz>=MIN_HZ?'':'warn';
+        state.sensorMsg=hz>=MIN_HZ?'':`센서가 느립니다(초당 ${hz.toFixed(0)}번). 절전 모드를 끄고 다른 앱을 닫은 뒤 새로고침하세요.`; }
       refresh(); },2000);
-  }catch(err){ $('sensorMsg').textContent='센서를 켜지 못했습니다: '+err.message; $('btnSensor').disabled=false; }
+  }catch(err){ state.sensorMsg='센서를 켜지 못했습니다: '+err.message; state.sensorCls='bad'; refresh(); }
 }
 // 시뮬레이션(?sim=1): 약 60 Hz. 수직축 회전은 rot_gamma, 앞은 x
 function startSim(){
@@ -302,51 +384,52 @@ function startSim(){
 }
 
 /* ── 녹화 ── */
+const segInstr=(r,i)=>r.isCheck?CHECKS[r.motion].instr:MOTIONS[r.motion].seg[i];
 function startRec(){
   if(!state.sensorOn||rec) return;
-  audioInit(); keepAwake();
+  audioInit(); keepAwake(); abortMsg='';
   const date=today(), nn=(counters[comboKey(date)]||0)+1;
   rec={phase:'countdown',date,nn,name:fileName(date,nn),key:comboKey(date),person:state.person,place:state.place,motion:curMotion(),
-       durMs:(isCheck()?CHECK_S:MAIN_S)*1000,isCheck:isCheck(),startPerf:performance.now(),t0:null,rows:[],lastTs:null,nullSkipped:0,cues:{},ticks:{3:true},timer:null};
-  $('resultCard').classList.add('hidden'); $('ovName').textContent=rec.name;
-  $('ovBarBox').style.visibility=rec.isCheck?'hidden':'visible'; $('ov').classList.remove('hidden','go');
+       durMs:(isCheck()?CHECK_S:MAIN_S)*1000,isCheck:isCheck(),startPerf:performance.now(),t0:null,rows:[],lastTs:null,nullSkipped:0,cues:{},ticks:{3:true},timer:null,shown:''};
+  $('ovName').textContent=rec.name;
+  const segs=$('ovSegs'); segs.innerHTML=''; segs.classList.toggle('hidden',rec.isCheck);
+  if(!rec.isCheck) MOTIONS[rec.motion].short.forEach((s,i)=>{ const d=el('div'); d.appendChild(el('i')); d.appendChild(el('span','',`${i+1}. ${s}`)); segs.appendChild(d); });
+  $('ov').classList.remove('hidden','go');
   sound.tick(); rec.timer=setInterval(recTick,50); recTick();
 }
-const segInstr=(r,i)=>r.isCheck?CHECKS[r.motion].instr:MOTIONS[r.motion].seg[i];
+function setBig(v){ const b=$('ovBig'); if(b.textContent===String(v)) return; b.textContent=v; b.classList.remove('tick'); void b.offsetWidth; b.classList.add('tick'); }
 function recTick(){
   if(!rec) return; const now=performance.now();
-  if(rec.phase==='countdown'){ const el=now-rec.startPerf, left=Math.ceil((COUNTDOWN_S*1000-el)/1000);
+  if(rec.phase==='countdown'){ const e=now-rec.startPerf, left=Math.ceil((COUNTDOWN_S*1000-e)/1000);
     if(left>=1&&!rec.ticks[left]){rec.ticks[left]=true;sound.tick();}
-    $('ovPhase').textContent='가만히 기다리세요'; $('ovBig').textContent=Math.max(left,1);
-    $('ovInstr').textContent='"삐" 소리가 나면 시작: '+segInstr(rec,0); $('ovNext').textContent=''; $('ovBar').style.width='0%';
-    if(el>=COUNTDOWN_S*1000){ rec.t0=performance.now(); rec.phase='main'; sound.start(); $('ov').classList.add('go'); }
+    $('ovPhase').textContent='가만히 기다리세요'; setBig(Math.max(left,1));
+    $('ovInstr').textContent=segInstr(rec,0); $('ovNext').textContent='"삐" 소리가 나면 시작합니다';
+    if(e>=COUNTDOWN_S*1000){ rec.t0=performance.now(); rec.phase='main'; sound.start(); $('ov').classList.add('go'); }
     return; }
-  if(rec.phase==='main'){ const el=now-rec.t0;
+  if(rec.phase==='main'){ const e=now-rec.t0;
     if(rec.lastTs!==null&&now-rec.lastTs>1000&&!SIM){ abortRec('센서 값이 1초 넘게 끊겼습니다.'); return; } // 화면 꺼짐, 브라우저 멈춤 등
-    if(el>=rec.durMs+300){ finishRec(); return; }
-    const si=Math.min(2,Math.floor(el/(SEG_S*1000)));
+    if(e>=rec.durMs+300){ finishRec(); return; }
+    const si=Math.min(2,Math.floor(e/(SEG_S*1000)));
     if(!rec.isCheck) for(const s of [1,2]) if(si>=s&&!rec.cues[s]){rec.cues[s]=true;sound.seg();}
-    const segLeft=rec.isCheck?rec.durMs-el:(si+1)*SEG_S*1000-el;
-    $('ovPhase').textContent=rec.isCheck?'확인 시험':`구간 ${si+1} / 3`;
-    $('ovBig').textContent=Math.max(0,Math.ceil(segLeft/1000));
+    const segLeft=rec.isCheck?rec.durMs-e:(si+1)*SEG_S*1000-e;
+    $('ovPhase').textContent=rec.isCheck?'확인 시험':`${MOTIONS[rec.motion].label}  ${si+1} / 3`;
+    setBig(Math.max(0,Math.ceil(segLeft/1000)));
     $('ovInstr').textContent=segInstr(rec,si);
-    $('ovNext').textContent=!rec.isCheck&&si<2&&segLeft<6000?'다음: '+segInstr(rec,si+1):'';
-    $('ovBar').style.width=Math.min(100,el/rec.durMs*100)+'%';
+    $('ovNext').textContent=!rec.isCheck&&si<2&&segLeft<6000?'곧 바뀝니다: '+segInstr(rec,si+1):'';
+    if(!rec.isCheck) [...$('ovSegs').children].forEach((d,i)=>{ d.className=i===si?'now':i<si?'past':'';
+      d.firstChild.style.width=(i<si?100:i===si?Math.min(100,(e-si*SEG_S*1000)/(SEG_S*10)):0)+'%'; });
   }
 }
 function stopRec(){ if(rec&&rec.timer) clearInterval(rec.timer); $('ov').classList.add('hidden'); }
-function abortRec(reason){ if(!rec) return; const r=rec; rec.phase='done'; stopRec(); rec=null; sound.bad();
-  $('resultCard').classList.remove('hidden'); $('rNote').className='note bad';
-  $('rNote').textContent='녹화 중단: '+reason+' 파일은 저장되지 않았습니다. 다시 녹화하세요.';
-  $('rName').textContent=r.name+' (저장 안 됨)'; ['rRows','rHz','rGap','rAz'].forEach(i=>$(i).textContent='-'); $('rGame').textContent='';
-  $('btnRedl').disabled=true; $('btnMemo').disabled=true; lastResult=null; refresh(); }
-function cancelRec(){ if(!rec) return; rec.phase='done'; stopRec(); rec=null; $('recHint').textContent='녹화를 취소했습니다. 파일은 저장되지 않았고 번호도 그대로입니다.'; refresh(); }
+function abortRec(reason){ if(!rec) return; rec.phase='done'; stopRec(); rec=null; sound.bad();
+  abortMsg='녹화가 중단됐습니다: '+reason+' 파일은 저장되지 않았으니 다시 녹화하세요.'; refresh(); }
+function cancelRec(){ if(!rec) return; rec.phase='done'; stopRec(); rec=null; abortMsg='녹화를 취소했습니다. 파일은 저장되지 않았습니다.'; refresh(); }
 
 function finishRec(){
   if(!rec||rec.phase!=='main') return;
-  rec.phase='done'; stopRec(); sound.end();
-  const r=rec; rec=null; const end=r.t0+r.durMs, rows=r.rows.filter(x=>x[0]<=end);
-  if(rows.length<10){ rec=r; r.phase='main'; abortRec('저장할 센서 값이 거의 없습니다.'); return; }
+  const r=rec, end=r.t0+r.durMs, rows=r.rows.filter(x=>x[0]<=end);
+  if(rows.length<10){ abortRec('저장할 센서 값이 거의 없습니다.'); return; }
+  rec.phase='done'; stopRec(); sound.end(); rec=null;
   const lines=[HEADER];
   for(const x of rows) lines.push([fmt(x[0]-r.t0,2),fmt(x[1],4),fmt(x[2],4),fmt(x[3],4),fmt(x[4],4),fmt(x[5],4),fmt(x[6],4),fmt(x[7],3),fmt(x[8],3),fmt(x[9],3),x[10]===null?'':String(x[10])].join(','));
   const csv=lines.join('\n')+'\n';
@@ -355,9 +438,9 @@ function finishRec(){
   for(let i=1;i<rows.length;i++){const g=rows[i][0]-rows[i-1][0]; if(g>maxGap)maxGap=g; if(g>GAP_MS)gaps++;}
   const pre=rows.filter(x=>x[0]<r.t0), azPre=pre.length?pre.reduce((s,x)=>s+x[3],0)/pre.length:null;
   const azBad=azPre!==null&&(azPre<AZ[0]||azPre>AZ[1]), problems=[];
-  if(hz<MIN_HZ) problems.push(`초당 ${hz.toFixed(0)}번으로 느립니다(45 미만).`);
-  if(gaps>=3) problems.push(`200 ms 넘게 끊긴 곳이 ${gaps}번 있습니다.`);
-  if(azBad) problems.push(`카운트다운 동안 az_g 평균이 ${azPre.toFixed(2)}입니다(9.5~10.1이어야 함). 폰 방향을 확인하세요.`);
+  if(hz<MIN_HZ) problems.push(`센서가 초당 ${hz.toFixed(0)}번으로 느렸습니다.`);
+  if(gaps>=3) problems.push(`0.2초 넘게 끊긴 곳이 ${gaps}번 있습니다.`);
+  if(azBad) problems.push(`폰이 기울어 있었습니다(az_g ${azPre.toFixed(2)}). 눕혀서 고정했는지 확인하세요.`);
   if(r.nullSkipped>0) problems.push(`빈 센서 값 ${r.nullSkipped}개를 건너뛰었습니다.`);
   const level=problems.length===0?'ok':(hz<MIN_HZ||gaps>=3||azBad?'bad':'warn');
   // 게임이라면: 구간별 인정 횟수
@@ -365,34 +448,39 @@ function finishRec(){
   for(const x of rows){ j.push(x[0],x[1],x[9]); const t=x[0]-r.t0;
     if(t>=0){ const g=game[Math.min(2,Math.floor(t/(r.durMs/3)))]; g.pumps+=j.pumps-pp; g.spins+=j.spins-ps; g.turn+=Math.abs(j.turn); g.n++; }
     pp=j.pumps; ps=j.spins; }
-  const gp=game.map(g=>g.pumps), gs=game.map(g=>g.spins), gt=game.map(g=>g.n?+(g.turn/g.n).toFixed(2):0);
   counters[r.key]=r.nn; lsSet('counters',counters);
   const entry={file:r.name,date:r.date,time:hhmm(),person:r.person,place:r.place,motion:r.motion,mode:MODE,nn:r.nn,recorder:'',memo:'',exclude:false,
     rows:rows.length,hz:Number(hz.toFixed(1)),max_gap_ms:Math.round(maxGap),az_pre:azPre===null?null:Number(azPre.toFixed(3)),auto_check:level,sim:SIM,app:APP,
-    game_pump:gp.join('/'),game_spin:gs.join('/'),game_turn:gt.join('/')};
+    game_pump:game.map(g=>g.pumps).join('/'),game_spin:game.map(g=>g.spins).join('/'),game_turn:game.map(g=>g.n?+(g.turn/g.n).toFixed(2):0).join('/')};
   log.push(entry); lsSet('log',log); backup.put(r.name,csv); download(r.name,csv);
-  lastResult={entry,csv};
-  showResult(entry,level,problems,r);
+  lastResult={entry,csv,problems};
+  showResult(lastResult);
   if(!r.isCheck) autoAdvance();
   refresh();
 }
-function gameVerdict(e,r){ // 이 동작에서 게임이 기대대로 반응했을지
-  const sum=s=>s.split('/').reduce((a,b)=>a+Number(b),0), P=sum(e.game_pump), S=sum(e.game_spin), T=e.game_turn;
-  const base=`게임이라면 (구간 1/2/3) · 앞뒤 인정 ${e.game_pump}번 · 회전 시작 인정 ${e.game_spin}번 · 물줄기 세기 ${T}`;
-  const want={pump:P>=10?'자동차가 잘 반응합니다.':'앞뒤 인정이 적습니다. 자동차가 잘 안 나갈 수 있습니다.',
-    spin:S>=3?'호두과자가 뒤집힙니다. (계속 도는 구간은 1번만 인정되는 것이 정상)':'회전 인정이 적습니다. 회전이 초당 35도보다 느렸을 수 있습니다.',
-    dance:Math.max(...T.split('/').map(Number))>=.35?'물줄기가 잘 나옵니다.':'물줄기가 약합니다. 회전이 느렸을 수 있습니다.',
-    move:`이동 중에 잘못 인정된 횟수입니다 (적을수록 좋음).`, still:P+S===0?'가만히 있을 때 잘못 인정이 없습니다.':'가만히 있는데 인정이 생겼습니다. 문턱을 올려야 할 수 있습니다.'}[r.motion]||'';
-  return {text:base+(want?' → '+want:''),cls:r.motion==='still'&&P+S>0?'note warn':'note'};
+function gameLine(e){ // 이 동작에서 게임이 기대대로 반응했을지: [수치, 한 줄 판단]
+  const nums=s=>String(s).split('/').map(Number), P=nums(e.game_pump), S=nums(e.game_spin), T=nums(e.game_turn), sum=a=>a.reduce((x,y)=>x+y,0);
+  switch(e.motion){
+    case 'pump': return [`앞뒤 인정 ${P.join(' · ')}번`, sum(P)>=10?'자동차가 잘 나갑니다.':'인정이 적어서 자동차가 잘 안 나갈 수 있습니다.'];
+    case 'spin': return [`회전 인정 ${S.join(' · ')}번`, sum(S)>=3?'호두과자가 뒤집힙니다. 계속 도는 구간은 1번만 세는 게 맞습니다.':'회전이 초당 35도보다 느렸을 수 있습니다.'];
+    case 'dance': return [`물줄기 세기 ${T.join(' · ')}`, Math.max(...T)>=.35?'물줄기가 잘 나옵니다.':'물줄기가 약합니다. 회전이 느렸을 수 있습니다.'];
+    case 'move': return [`앞뒤 ${sum(P)}번, 회전 ${sum(S)}번 잘못 인정`, '이동 중에 게임이 잘못 반응한 횟수입니다. 적을수록 좋습니다.'];
+    case 'still': return [`앞뒤 ${sum(P)}번, 회전 ${sum(S)}번 잘못 인정`, sum(P)+sum(S)===0?'가만히 있을 때 게임이 조용합니다.':'가만히 있는데 반응했습니다. 문턱을 올려야 할 수 있습니다.'];
+    default: return [`앞뒤 ${sum(P)}번, 회전 ${sum(S)}번`, ''];
+  }
 }
-function showResult(entry,level,problems,r){
-  $('resultCard').classList.remove('hidden'); $('rNote').className='note '+level;
-  $('rNote').textContent=level==='ok'?'정상입니다. 파일이 Download 폴더에 저장되었습니다.':(level==='bad'?'다시 녹화를 권합니다. ':'확인이 필요합니다. ')+problems.join(' ');
-  $('rName').textContent=entry.file; $('rRows').textContent=entry.rows; $('rHz').textContent=entry.hz.toFixed(1); $('rGap').textContent=entry.max_gap_ms;
-  $('rAz').textContent=entry.az_pre===null?'-':entry.az_pre.toFixed(2);
-  const v=gameVerdict(entry,r); $('rGame').textContent=v.text; $('rGame').className=v.cls;
-  $('btnRedl').disabled=false; $('btnMemo').disabled=false; $('memoText').value=''; $('memoExclude').checked=false; $('memoMsg').textContent='';
+function showResult(R){ const e=R.entry, level=e.auto_check;
+  $('res').className='full '+(level==='ok'?'':level);
+  $('resHead').textContent={ok:'잘 녹화됐습니다',warn:'확인이 필요합니다',bad:'다시 녹화하세요'}[level];
+  $('resWhy').textContent=level==='ok'?'파일이 Download 폴더에 저장됐습니다.':R.problems.join(' ');
+  $('rRows').textContent=e.rows; $('rHz').textContent=e.hz.toFixed(0); $('rGap').textContent=e.max_gap_ms; $('rAz').textContent=e.az_pre===null?'-':e.az_pre.toFixed(2);
+  const [nums,say]=gameLine(e), g=$('resGame'); g.innerHTML=''; g.appendChild(el('b','','게임이라면  ')); g.appendChild(document.createTextNode(nums+(say?'.  '+say:'')));
+  $('resFile').textContent=e.file; $('memoText').value=e.memo||''; $('memoExclude').checked=!!e.exclude;
+  $('btnNext').textContent=level==='bad'?'닫고 다시 녹화':'다음 녹화로';
+  $('res').classList.remove('hidden');
 }
+function closeResult(){ if(lastResult){ lastResult.entry.memo=$('memoText').value.trim(); lastResult.entry.exclude=$('memoExclude').checked; lsSet('log',log); }
+  $('res').classList.add('hidden'); refresh(); }
 function download(name,text){ try{ const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([text],{type:'text/csv'})); a.download=name;
   document.body.appendChild(a); a.click(); setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},1500); }catch(e){} }
 const doneToday=m=>log.some(e=>!e.exclude&&e.date===today()&&e.person===state.person&&e.place===state.place&&e.motion===m&&!!e.sim===SIM);
@@ -401,59 +489,76 @@ function autoAdvance(){ const ks=Object.keys(MOTIONS), i=ks.indexOf(state.motion
 const saveSettings=()=>lsSet('settings',{person:state.person,place:state.place,motion:state.motion,check:state.check});
 
 /* ── 그리기 ── */
-function chips(el,items,cur,pick){ el.innerHTML=''; for(const it of items){ const b=document.createElement('button'); b.textContent=it.label; b.className=it.id===cur?'on':''; b.onclick=()=>{pick(it.id);saveSettings();refresh();}; el.appendChild(b);} }
+function chips(box,items,cur,pick){ box.innerHTML=''; for(const it of items){ const b=el('button',it.id===cur?'on':'',it.label); if(it.small) b.appendChild(el('small','',it.small)); b.setAttribute('aria-pressed',it.id===cur); b.onclick=()=>{pick(it.id);saveSettings();refresh();}; box.appendChild(b);} }
 function refresh(){
-  chips($('people'),PEOPLE.map(p=>({id:p,label:p})),state.person,v=>state.person=v);
-  chips($('places'),PLACES,state.place,v=>state.place=v);
-  const box=$('motions'); box.innerHTML='';
-  const list=isCheck()?Object.entries(CHECKS).map(([id,c])=>({id,title:c.label,sub:c.instr})):Object.entries(MOTIONS).map(([id,m])=>({id,title:`${id} · ${m.label}`,sub:m.game}));
-  for(const it of list){ const b=document.createElement('button'), done=doneToday(it.id);
-    b.className=(it.id===curMotion()?'on ':'')+(done?'done':''); b.innerHTML=`<b></b><span></span><i>${done?'오늘 완료':'아직'}</i>`;
-    b.children[0].textContent=it.title; b.children[1].textContent=it.sub;
+  chips($('people'),PEOPLE.map(p=>({id:p,label:NAMES[p],small:p})),state.person,v=>state.person=v);
+  chips($('places'),PLACES.map(p=>({id:p.id,label:p.id==='check'?'확인':p.label})),state.place,v=>state.place=v);
+  const box=$('motions'); box.innerHTML=''; $('motionTitle').textContent=isCheck()?'확인 시험 (10초, 학습에는 안 씀)':'동작';
+  const list=isCheck()?Object.entries(CHECKS).map(([id,c])=>({id,title:c.label,sub:c.instr})):Object.entries(MOTIONS).map(([id,m])=>({id,title:m.label,sub:m.game}));
+  for(const it of list){ const done=doneToday(it.id), b=el('button',(it.id===curMotion()?'on ':'')+(done?'done':''));
+    b.appendChild(el('b','',it.title)); b.appendChild(el('span','',it.sub)); b.appendChild(el('i','',done?'완료':'아직')); b.setAttribute('aria-pressed',it.id===curMotion());
     b.onclick=()=>{ if(isCheck())state.check=it.id; else state.motion=it.id; saveSettings(); refresh(); }; box.appendChild(b); }
-  $('motionHint').textContent=isCheck()?'확인 시험은 10초이고 학습에는 쓰지 않습니다. 폰 방향과 단위를 확인하는 용도입니다.'
-    :'60초 = 20초 × 3구간: '+MOTIONS[state.motion].seg.map((s,i)=>`${i+1}) ${s}`).join('  ');
-  const date=today(); $('nextName').textContent='다음 파일: '+fileName(date,(counters[comboKey(date)]||0)+1);
-  $('btnRec').disabled=!state.sensorOn||!!rec;
-  if(!storageOk) $('recHint').textContent='이 브라우저에서 저장 공간을 쓸 수 없어 파일 번호와 기록표가 새로고침하면 사라집니다.';
+  // 오른쪽: 지금 녹화할 것
+  const m=curMotion(), date=today();
+  $('goWhat').textContent=`${NAMES[state.person]}  ${PLACES.find(p=>p.id===state.place).label}  ${isCheck()?CHECKS[m].label:MOTIONS[m].label}`;
+  const steps=$('goSteps'); steps.innerHTML='';
+  (isCheck()?[CHECKS[m].instr]:MOTIONS[m].seg).forEach((s,i)=>{ const li=el('li'); li.appendChild(el('b','',i+1)); li.appendChild(el('span','',isCheck()?s:`${s}`)); steps.appendChild(li); });
+  $('goFile').textContent=fileName(date,(counters[comboKey(date)]||0)+1);
+  const msg=$('goMsg'); let text=abortMsg||state.sensorMsg, cls=abortMsg?'bad':state.sensorCls;
+  if(!text&&!state.sensorOn){ text='폰을 받침판에 눕혀 고정한 뒤 센서를 켜세요.'; }
+  if(!text&&!storageOk){ text='저장 공간을 쓸 수 없어 새로고침하면 기록표와 번호가 사라집니다.'; cls='warn'; }
+  if(!text&&!isCheck()) text='20초씩 3구간, 모두 60초입니다. 앉은 사람이 발로 밀어 혼자 움직입니다.';
+  msg.textContent=text||''; msg.className=cls||'';
+  const go=$('btnGo'); go.textContent=state.sensorOn?'녹화 시작':'센서 켜기'; go.disabled=!!rec||(state.sensorMsg==='센서를 켜는 중…');
+  const ls=$('lastStrip'); ls.classList.toggle('hidden',!lastResult);
+  if(lastResult){ const e=lastResult.entry; ls.innerHTML=''; ls.appendChild(el('em',e.auto_check==='ok'?'':e.auto_check,{ok:'정상',warn:'확인',bad:'다시'}[e.auto_check])); ls.appendChild(el('span','','방금: '+e.file)); }
   drawLog();
 }
-function drawLog(){ const tb=$('logBody'); tb.innerHTML=''; $('logEmpty').classList.toggle('hidden',log.length>0);
-  log.slice().reverse().forEach(e=>{ const tr=document.createElement('tr'), td=t=>{const c=document.createElement('td');c.textContent=t;tr.appendChild(c);return c;};
-    td(e.file).className='name'; td(e.time); td(e.hz); td({ok:'정상',warn:'확인',bad:'다시'}[e.auto_check]||'');
-    const ex=td(''), cb=document.createElement('input'); cb.type='checkbox'; cb.checked=!!e.exclude; cb.style.cssText='width:22px;height:22px'; cb.setAttribute('aria-label',e.file+' 제외');
-    cb.onchange=()=>{e.exclude=cb.checked;lsSet('log',log);refresh();}; ex.appendChild(cb);
-    const dl=td(''), b=document.createElement('button'); b.textContent='받기'; b.onclick=async()=>{const t=await backup.get(e.file); if(t)download(e.file,t); else $('logMsg').textContent='백업이 없습니다: '+e.file;}; dl.appendChild(b);
-    tb.appendChild(tr); }); }
+function drawLog(){ const box=$('logList'); box.innerHTML=''; $('logEmpty').classList.toggle('hidden',log.length>0);
+  log.slice().reverse().forEach(e=>{ const row=el('div','logrow'+(e.exclude?' ex':'')), name=el('div');
+    const lab=MOTIONS[e.motion]?MOTIONS[e.motion].label:(CHECKS[e.motion]?CHECKS[e.motion].label:e.motion);
+    name.appendChild(el('b','',`${NAMES[e.person]||e.person} ${lab} ${pad2(e.nn)}`)); name.appendChild(el('small','',`${e.time}   초당 ${Math.round(e.hz)}번   ${e.file}`)); if(e.memo) name.appendChild(el('small','','메모: '+e.memo));
+    row.appendChild(name); row.appendChild(el('span','pill '+(e.auto_check==='ok'?'':e.auto_check),{ok:'정상',warn:'확인',bad:'다시'}[e.auto_check]||''));
+    const lb=el('label','ck'), cb=el('input'); cb.type='checkbox'; cb.checked=!!e.exclude; cb.onchange=()=>{e.exclude=cb.checked;lsSet('log',log);refresh();}; lb.appendChild(cb); lb.appendChild(document.createTextNode('제외')); row.appendChild(lb);
+    const b=el('button','','받기'); b.setAttribute('aria-label',e.file+' 다시 받기'); b.onclick=async()=>{const t=await backup.get(e.file); if(t)download(e.file,t); else $('logMsg').textContent='이 폰에 백업이 없습니다: '+e.file;}; row.appendChild(b);
+    box.appendChild(row); }); }
 function logCsv(){ const cols=['file','date','time','person','place','motion','mode','nn','recorder','memo','exclude','rows','hz','max_gap_ms','az_pre','auto_check','sim','app','game_pump','game_spin','game_turn'];
   const q=v=>{v=v===null||v===undefined?'':String(v===true?'yes':v===false?'no':v);return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;};
   return cols.join(',')+'\n'+log.map(e=>cols.map(c=>q(e[c])).join(',')).join('\n')+'\n'; }
 
 setInterval(()=>{ // 위쪽 표시와 점검 탭
   const hz=state.sensorOn?liveHz():0, chip=$('chip');
-  chip.textContent=state.sensorOn?`센서 ${hz.toFixed(0)} Hz`:'센서 꺼짐'; chip.className='chip'+(state.sensorOn?(hz>=MIN_HZ?' ok':' bad'):'');
+  chip.textContent=state.sensorOn?`센서 초당 ${hz.toFixed(0)}번`:'센서 꺼짐'; chip.className=state.sensorOn?(hz>=MIN_HZ?'ok':'bad'):'';
   if($('tab-check').classList.contains('hidden')||!lastRow) return;
-  const names=['ax_g','ay_g','az_g','rot_alpha','rot_beta','rot_gamma'], idx=[1,2,3,7,8,9], last=ring[ring.length-1][0], rs=ring.filter(x=>last-x[0]<=1000);
-  const avg=i=>rs.reduce((s,x)=>s+x[i],0)/rs.length;
-  $('liveBody').innerHTML=names.map((n,k)=>`<tr><td>${n}</td><td>${lastRow[idx[k]].toFixed(2)}</td><td>${avg(idx[k]).toFixed(2)}</td></tr>`).join('');
-  const az=avg(3), ok=az>=AZ[0]&&az<=AZ[1]&&Math.abs(avg(1))<2.5&&Math.abs(avg(2))<2.5, on=$('orientNote');
-  on.textContent=ok?`폰 방향 정상 (az_g ${az.toFixed(2)})`:`폰 방향 확인 필요: az_g ${az.toFixed(2)}, ax_g ${avg(1).toFixed(2)}, ay_g ${avg(2).toFixed(2)}. 눕혀서 화면이 위를 보게 하세요.`; on.className='note '+(ok?'ok':'warn');
-  $('iA').textContent=integ.a.toFixed(0); $('iB').textContent=integ.b.toFixed(0); $('iG').textContent=integ.g.toFixed(0);
-  $('axMax').textContent=isFinite(integ.axMax)?integ.axMax.toFixed(2):'-'; $('axMin').textContent=isFinite(integ.axMin)?integ.axMin.toFixed(2):'-';
-  $('gPump').textContent=live.pumps; $('gSpin').textContent=live.spins; $('gTurn').textContent=(-live.turn).toFixed(2);
+  const last=ring[ring.length-1][0], rs=ring.filter(x=>last-x[0]<=1000), avg=i=>rs.reduce((s,x)=>s+x[i],0)/rs.length;
+  const ax=avg(1), ay=avg(2), az=avg(3), ok=az>=AZ[0]&&az<=AZ[1]&&Math.abs(ax)<2.5&&Math.abs(ay)<2.5;
+  $('vAx').textContent=ax.toFixed(1); $('vAy').textContent=ay.toFixed(1); $('vAz').textContent=az.toFixed(1);
+  const o=$('orient'); o.textContent=ok?'맞게 놓였습니다':'다시 놓으세요: 눕혀서 화면이 위로'; o.className='verdict '+(ok?'ok':'warn');
+  $('iA').textContent=Math.round(integ.a)+0; $('iB').textContent=Math.round(integ.b)+0; $('iG').textContent=Math.round(integ.g)+0;
+  const tv=$('turnV'), g=integ.g, big=Math.max(Math.abs(integ.a),Math.abs(integ.b));
+  if(Math.abs(g)<60&&big<60){ tv.textContent='초기화하고 왼쪽으로 한 바퀴 도세요'; tv.className='verdict'; }
+  else if(g>300&&g<420&&big<90){ tv.textContent='맞습니다: gamma가 +360 근처'; tv.className='verdict ok'; }
+  else if(g<-300&&big<90){ tv.textContent='좌우가 반대입니다 (게임 설정을 뒤집어야 함)'; tv.className='verdict warn'; }
+  else if(big>300){ tv.textContent='gamma가 아닌 다른 축이 돕니다. 폰 방향을 확인하세요'; tv.className='verdict warn'; }
+  else { tv.textContent='도는 중…'; tv.className='verdict'; }
+  $('axMax').textContent=isFinite(integ.axMax)?integ.axMax.toFixed(1):'-'; $('axMin').textContent=isFinite(integ.axMin)?integ.axMin.toFixed(1):'-';
+  const pv=$('pushV'); if(isFinite(integ.axMax)&&integ.axMax-ax>2){ pv.textContent='맞습니다: 앞으로 밀 때 ax_g가 올랐습니다'; pv.className='verdict ok'; } else { pv.textContent='초기화하고 의자를 앞으로 훅 미세요'; pv.className='verdict'; }
+  $('gPump').textContent=live.pumps; $('gSpin').textContent=live.spins; $('gTurn').textContent=(-live.turn).toFixed(1);
 },200);
 
 /* ── 버튼 ── */
-$('ver').textContent=APP; $('btnSensor').onclick=startSensor; $('btnRec').onclick=startRec; $('ovCancel').onclick=cancelRec;
-$('gameHint').textContent=`게임과 같은 문턱입니다: 앞뒤 ${GAME.pumpAcc} m/s² (초당 ${GAME.pumpMaxTurn}도 넘게 도는 중에는 제외), 회전 시작 초당 ${GAME.spinRate}도, 물줄기는 초당 ${GAME.turnFull}도에서 가장 셉니다.`;
-$('btnInteg').onclick=()=>{integ.a=integ.b=integ.g=0;}; $('btnAx').onclick=()=>{integ.axMax=-Infinity;integ.axMin=Infinity;}; $('btnGame').onclick=()=>{live=gameJudge();};
-$('btnMemo').onclick=()=>{ if(!lastResult) return; lastResult.entry.memo=$('memoText').value.trim(); lastResult.entry.exclude=$('memoExclude').checked; lsSet('log',log); $('memoMsg').textContent='저장했습니다.'; refresh(); };
+$('ver').textContent=APP.replace('rec-','');
+$('btnGo').onclick=()=>state.sensorOn?startRec():startSensor();
+$('ovCancel').onclick=cancelRec; $('btnNext').onclick=closeResult;
+$('lastStrip').onclick=()=>{ if(lastResult) showResult(lastResult); };
 $('btnRedl').onclick=()=>{ if(lastResult) download(lastResult.entry.file,lastResult.csv); };
-$('btnLogDl').onclick=()=>{ if(!log.length){$('logMsg').textContent='기록이 없습니다.';return;} download((SIM?'SIM_':'')+'log_'+today()+'.csv',logCsv()); $('logMsg').textContent='받았습니다.'; };
+$('gameHint').textContent=`게임과 같은 기준입니다. 앞뒤 ${GAME.pumpAcc} m/s², 회전 시작 초당 ${GAME.spinRate}도, 물줄기는 초당 ${GAME.turnFull}도에서 가장 셉니다(왼쪽이 −).`;
+$('btnInteg').onclick=()=>{integ.a=integ.b=integ.g=0;}; $('btnAx').onclick=()=>{integ.axMax=-Infinity;integ.axMin=Infinity;}; $('btnGame').onclick=()=>{live=gameJudge();};
+$('btnLogDl').onclick=()=>{ if(!log.length){$('logMsg').textContent='기록이 없습니다.';return;} const n=(SIM?'SIM_':'')+'log_'+today()+'.csv'; download(n,logCsv()); $('logMsg').textContent=n+' 을 받았습니다.'; };
 let clearArmed=0;
-$('btnClear').onclick=()=>{ const b=$('btnClear'); if(Date.now()-clearArmed>4000){clearArmed=Date.now();b.textContent='정말 지우려면 한 번 더 누르세요';setTimeout(()=>{b.textContent='모든 기록 지우기';},4000);return;}
-  log=[];counters={};lsSet('log',log);lsSet('counters',counters);backup.clear();lastResult=null;$('resultCard').classList.add('hidden');b.textContent='모든 기록 지우기';clearArmed=0;refresh(); };
-document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{ document.querySelectorAll('.tabs button').forEach(x=>x.classList.toggle('on',x===b));
+$('btnClear').onclick=()=>{ const b=$('btnClear'); if(Date.now()-clearArmed>4000){clearArmed=Date.now();b.textContent='정말 지우려면 한 번 더';setTimeout(()=>{b.textContent='모든 기록 지우기';},4000);return;}
+  log=[];counters={};lsSet('log',log);lsSet('counters',counters);backup.clear();lastResult=null;b.textContent='모든 기록 지우기';clearArmed=0;refresh(); };
+document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{ document.querySelectorAll('nav button').forEach(x=>x.classList.toggle('on',x===b));
   for(const t of ['rec','check','log']) $('tab-'+t).classList.toggle('hidden',t!==b.dataset.tab); });
 if(!isSecureContext&&!SIM) $('httpsWarn').classList.remove('hidden');
 if(SIM) $('simWarn').classList.remove('hidden');
